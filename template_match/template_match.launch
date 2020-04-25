@@ -1,0 +1,4 @@
+<launch>
+	<node pkg="template_match" type="template_match" name="template_match" output="screen">
+	</node>
+</launch>
