@@ -4,7 +4,7 @@ project(probot_ocr)
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
 
-set(OpenCV_DIR /home/mkjia/opencv-3.4.6/build/)
+set(OpenCV_DIR /opt/ros/kinetic/share/OpenCV-3.3.1-dev)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
