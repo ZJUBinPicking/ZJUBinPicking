@@ -1,3 +1,0 @@
-# Developlog
-
-ADD FOR TEST
