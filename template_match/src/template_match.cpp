@@ -72,26 +72,76 @@ void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
   //   while (!viewer.wasStopped()) {
   //     // 你可以在这里对点云做很多处理
   //   }
-  pcl::PointCloud<PointT>::Ptr mycloud(new pcl::PointCloud<PointT>);
+  pcl::PointCloud<PointT>::Ptr mycloud(&cloud);
   pcl::console::TicToc tt;
 
   std::cout << "ReadImage...\n", tt.tic();
-  pcl::PCDReader reader;
-  reader.read("/home/gjx/orbslam/test.pcd", *mycloud);
+  //   pcl::PCDReader reader;
+  //   reader.read(
+  //       "/home/gjx/orbslam/pcl-master/doc/tutorials/content/sources/"
+  //       "cylinder_segmentation/table_scene_mug_stereo_textured_cylinder.pcd",
+  //       *mycloud);
   pcl::PointCloud<PointT>::Ptr cloud_filtered(new pcl::PointCloud<PointT>);
   pcl::CropBox<PointT> crop;
 
-  crop.setMin(Eigen::Vector4f(0, 0, 0.0, 1.0));  //给定立体空间
-  crop.setMax(
-      Eigen::Vector4f(5.0, 5.0, 5.0, 1.0));  //数据随意给的，具体情况分析
+  crop.setMin(Eigen::Vector4f(0, 0, 0, 1.0));  //给定立体空间
+  crop.setMax(Eigen::Vector4f(10, 10, 10, 1.0));  //数据随意给的，具体情况分析
   crop.setInputCloud(mycloud);
   crop.setKeepOrganized(true);
   crop.setUserFilterValue(0.1f);
   crop.filter(*cloud_filtered);
   std::cout << "The points data:  " << cloud_filtered->points.size()
             << std::endl;
-  // showCloud(mycloud, cloud_filtered);
+  showCloud(mycloud, cloud_filtered);
 }
+
+void template_match::match() {
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(&model);
+
+  const float depth_limit = 1.0;
+  pcl::PassThrough<pcl::PointXYZ> pass;
+  pass.setInputCloud(cloud);
+  pass.setFilterFieldName("z");
+  pass.setFilterLimits(0, depth_limit);
+  pass.filter(*cloud);
+
+  // ... and downsampling the point cloud
+  const float voxel_grid_size = 0.005f;
+  pcl::VoxelGrid<pcl::PointXYZ> vox_grid;
+  vox_grid.setInputCloud(cloud);
+  vox_grid.setLeafSize(voxel_grid_size, voxel_grid_size, voxel_grid_size);
+  // vox_grid.filter (*cloud); // Please see this
+  pcl::PointCloud<pcl::PointXYZ>::Ptr tempCloud(
+      new pcl::PointCloud<pcl::PointXYZ>);
+  vox_grid.filter(*tempCloud);
+  cloud = tempCloud;
+
+  // Assign to the target FeatureCloud
+  FeatureCloud target_cloud;
+  target_cloud.setInputCloud(cloud);
+
+  // Set the TemplateAlignment inputs
+  TemplateAlignment template_align;
+  for (size_t i = 0; i < object_templates.size(); ++i) {
+    template_align.addTemplateCloud(object_templates[i]);
+  }
+  template_align.setTargetCloud(target_cloud);
+
+  // Find the best template alignment
+  TemplateAlignment::Result best_alignment;
+  int best_index = template_align.findBestAlignment(best_alignment);
+  const FeatureCloud &best_template = object_templates[best_index];
+
+  // Print the alignment fitness score (values less than 0.00002 are good)
+  printf("Best fitness score: %f\n", best_alignment.fitness_score);
+
+  // Print the rotation matrix and translation vector
+  Eigen::Matrix3f rotation =
+      best_alignment.final_transformation.block<3, 3>(0, 0);
+  Eigen::Vector3f translation =
+      best_alignment.final_transformation.block<3, 1>(0, 3);
+}
+
 void template_match::mainloop() {
   ros::Rate loop_rate_class(10);
   while (1) {

@@ -211,12 +211,17 @@ class TemplateAlignment {
 
 class template_match {
  public:
+  friend class TemplateAlignment;
+  friend class FeatureCloud;
   ros::Subscriber bat_sub;
+  pcl::PointCloud<pcl::PointXYZ> model;
+  std::vector<FeatureCloud> object_templates;
   template_match();
   void showCloud(pcl::PointCloud<PointT>::Ptr cloud1,
                  pcl::PointCloud<PointT>::Ptr cloud2);
   void cloudCB(const sensor_msgs::PointCloud2 &input);
   void init();
   void mainloop();
+  void match();
 };
 #endif
