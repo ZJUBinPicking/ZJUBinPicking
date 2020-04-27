@@ -28,6 +28,18 @@ void cloud_cb(const sensor_msgs::PointCloud2ConstPtr& cloud_msg) {
 
   // Publish the data
   pub.publish(output);
+  pcl::PointCloud<pcl::PointXYZ> mycloud;
+  pcl::fromROSMsg(*cloud_msg, mycloud);  //从ROS类型消息转为PCL类型消息
+  pcl::io::savePCDFileASCII(
+      "/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/template_match/"
+      "write_pcd_test.pcd",
+      mycloud);  //保存pcd
+  // pcl::PointCloud<pcl::PointXYZRGBA>::Ptr mycloudptr(
+  //     new pcl::PointCloud<pcl::PointXYZRGBA>);
+
+  // pcl::visualization::CloudViewer viewer("Cloud Viewer");
+  // //这里会一直阻塞直到点云被渲染
+  // viewer.showCloud(mycloudptr);
 }
 
 int main(int argc, char** argv) {
