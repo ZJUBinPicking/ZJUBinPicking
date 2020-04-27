@@ -1,10 +1,21 @@
+#ifndef TEMPLATE_MATCH
+#define TEMPLATE_MATCH
+
+#include <pcl/console/time.h>
+#include <pcl/features/fpfh.h>
+#include <pcl/features/normal_3d.h>
+#include <pcl/filters/crop_box.h>
+#include <pcl/filters/passthrough.h>
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/kdtree/kdtree_flann.h>
+// #include <pcl/memory.h>
 #include <pcl/features/fpfh.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/filters/passthrough.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/kdtree/kdtree_flann.h>
-#include <pcl/memory.h>
 #include <pcl/pcl_macros.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -20,35 +31,8 @@
 #include <iostream>
 #include <limits>
 #include <vector>
-int user_data;
-void viewerOneOff(pcl::visualization::PCLVisualizer &viewer) {
-  //设置背景颜色
-  viewer.setBackgroundColor(1.0, 0.5, 1.0);
-  // //球体坐标
-  // pcl::PointXYZ o;
-  // o.x = 0;
-  // o.y = 0;
-  // o.z = 0;
-  // //添加球体
-  // viewer.addSphere(o, 1, "sphere", 0);
-  std::cout << "i only run once" << std::endl;
-}
-
-void viewerPsycho(pcl::visualization::PCLVisualizer &viewer) {
-  static unsigned count = 0;
-  std::stringstream ss;
-  ss << "Once per viewer loop: " << count++;
-  viewer.removeShape("text", 0);
-  viewer.addText(ss.str(), 200, 300, "text", 0);
-
-  // FIXME: possible race condition here:
-  user_data++;
-}
-class template_match {
- public:
-  friend class FeatureCloud;
-  friend class TemplateAlignment;
-};
+typedef pcl::PointXYZ PointT;
+using namespace std;
 
 class FeatureCloud {
  public:
@@ -136,7 +120,7 @@ class TemplateAlignment {
   struct Result {
     float fitness_score;
     Eigen::Matrix4f final_transformation;
-    PCL_MAKE_ALIGNED_OPERATOR_NEW
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   };
 
   TemplateAlignment()
@@ -182,7 +166,7 @@ class TemplateAlignment {
   void alignAll(std::vector<TemplateAlignment::Result,
                             Eigen::aligned_allocator<Result> > &results) {
     results.resize(templates_.size());
-    for (std::size_t i = 0; i < templates_.size(); ++i) {
+    for (size_t i = 0; i < templates_.size(); ++i) {
       align(templates_[i], results[i]);
     }
   }
@@ -197,7 +181,7 @@ class TemplateAlignment {
     // Find the template with the best (lowest) fitness score
     float lowest_score = std::numeric_limits<float>::infinity();
     int best_template = 0;
-    for (std::size_t i = 0; i < results.size(); ++i) {
+    for (size_t i = 0; i < results.size(); ++i) {
       const Result &r = results[i];
       if (r.fitness_score < lowest_score) {
         lowest_score = r.fitness_score;
@@ -224,3 +208,15 @@ class TemplateAlignment {
   float max_correspondence_distance_;
   int nr_iterations_;
 };
+
+class template_match {
+ public:
+  ros::Subscriber bat_sub;
+  template_match();
+  void showCloud(pcl::PointCloud<PointT>::Ptr cloud1,
+                 pcl::PointCloud<PointT>::Ptr cloud2);
+  void cloudCB(const sensor_msgs::PointCloud2 &input);
+  void init();
+  void mainloop();
+};
+#endif

@@ -3,6 +3,7 @@ project(template_match)
 # set(CMAKE_CXX_STANDARD 14)
 # set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # set(PCL_DIR "/usr/local/include/pcl-1.10/pcl") 
+
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
@@ -19,7 +20,7 @@ sensor_msgs
 # add_definitions(${PCL_DEFINITIONS})
  catkin_package(
     INCLUDE_DIRS
-    # include
+    include
     CATKIN_DEPENDS roscpp
                    pcl_conversions
                    pcl_ros
@@ -33,6 +34,7 @@ include_directories(
  include
   ${catkin_INCLUDE_DIRS}
    ${template_match_SOURCE_DIR} include/
+   
   #  ${PCL_INCLUDE_DIRS}
 )
 # add_executable(template_match src/main.cpp)
@@ -43,7 +45,7 @@ add_executable(output src/output.cpp)
 target_link_libraries(output ${catkin_LIBRARIES})
 # target_link_libraries (output libvtkCommonCore-8.2.so.1 libvtkRenderingOpenGL2-8.2.so.1 )
 
-add_executable(listen src/listen.cpp)
+add_executable(listen src/listen.cpp src/template_match.cpp)
 target_link_libraries(listen ${catkin_LIBRARIES})
 # target_link_libraries (listen libvtkCommonCore-8.2.so.1 libvtkRenderingOpenGL2-8.2.so.1)
 # target_link_libraries(listen ${VTK_LIBRARIES} ${PCL_LIBRARIES})
