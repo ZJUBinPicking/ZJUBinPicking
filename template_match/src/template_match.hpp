@@ -32,15 +32,15 @@
 #include <limits>
 #include <vector>
 typedef pcl::PointXYZ PointT;
+typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
+typedef pcl::PointCloud<pcl::Normal> SurfaceNormals;
+typedef pcl::PointCloud<pcl::FPFHSignature33> LocalFeatures;
+typedef pcl::search::KdTree<pcl::PointXYZ> SearchMethod;
 using namespace std;
 
 class FeatureCloud {
  public:
   // A bit of shorthand
-  typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
-  typedef pcl::PointCloud<pcl::Normal> SurfaceNormals;
-  typedef pcl::PointCloud<pcl::FPFHSignature33> LocalFeatures;
-  typedef pcl::search::KdTree<pcl::PointXYZ> SearchMethod;
 
   FeatureCloud()
       : search_method_xyz_(new SearchMethod),
@@ -215,7 +215,8 @@ class template_match {
   friend class TemplateAlignment;
   friend class FeatureCloud;
   ros::Subscriber bat_sub;
-  pcl::PointCloud<pcl::PointXYZ> model;
+  PointCloud::Ptr model_;
+  pcl::PointCloud<PointT> cloud;
   std::vector<FeatureCloud> object_templates;
   template_match();
   void showCloud(pcl::PointCloud<PointT>::Ptr cloud1,
@@ -223,6 +224,6 @@ class template_match {
   void cloudCB(const sensor_msgs::PointCloud2 &input);
   void init();
   void mainloop();
-  void match();
+  void match(pcl::PointCloud<PointT>::Ptr mycloud);
 };
 #endif

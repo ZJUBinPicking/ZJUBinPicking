@@ -36,6 +36,8 @@ void template_match::init() {
   ros::param::get("~max_x", max_x);
   ros::param::get("~max_y", max_y);
   ros::param::get("~max_z", max_z);
+  // this->model_ == PointCloud::Ptr(new PointCloud);
+  // pcl::io::loadPCDFile("/home/gjx/orbslam/coke_model.pcd", *model_);
   ros::spinOnce();
 }
 
@@ -102,8 +104,12 @@ void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
   showCloud(mycloud, cloud_filtered);
 }
 
-void template_match::match() {
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(&model);
+void template_match::match(pcl::PointCloud<PointT>::Ptr mycloud) {
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(model_);
+
+  FeatureCloud template_cloud;
+  template_cloud.setInputCloud(mycloud);
+  object_templates.push_back(template_cloud);
 
   const float depth_limit = 1.0;
   pcl::PassThrough<pcl::PointXYZ> pass;

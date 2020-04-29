@@ -1,12 +1,12 @@
 <launch>
 	<node pkg="template_match" type="template_match" name="template_match" output="screen">
-	<param name="min_x"  type="double" value="0"/>
-	<param name="min_y"  type="double" value="0"/>
-	<param name="min_z"  type="double" value="0"/>
-	<param name="max_x"  type="double" value="0.2"/>
-	<param name="max_y"  type="double" value="0.2"/>
-	<param name="max_z"  type="double" value="0.2"/>
+	<param name="min_x"  type="double" value="-0.12"/>
+	<param name="min_y"  type="double" value="-0.12"/>
+	<param name="min_z"  type="double" value="0.5"/>
+	<param name="max_x"  type="double" value="0.1"/>
+	<param name="max_y"  type="double" value="0"/>
+	<param name="max_z"  type="double" value="0.52"/>
 	</node>
-	<node pkg="template_match" type="output_clouds" name="output_clouds" output="screen">
-	</node>
+	<!-- <node pkg="template_match" type="output_clouds" name="output_clouds" output="screen">
+	</node> -->
 </launch>
