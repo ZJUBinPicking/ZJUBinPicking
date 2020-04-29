@@ -2,7 +2,7 @@
 #define TEMPLATE_MATCH
 
 #include <pcl/console/time.h>
-#include <pcl/features/fpfh.h>
+//#include <pcl/features/fpfh.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/filters/crop_box.h>
 #include <pcl/filters/passthrough.h>
@@ -211,6 +211,7 @@ class TemplateAlignment {
 
 class template_match {
  public:
+  double min_x, min_y, min_z, max_x, max_y, max_z;
   friend class TemplateAlignment;
   friend class FeatureCloud;
   ros::Subscriber bat_sub;

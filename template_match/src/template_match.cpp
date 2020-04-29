@@ -30,6 +30,12 @@ void template_match::init() {
   ros::NodeHandle nh;
   bat_sub = nh.subscribe("/camera/depth/points", 1, &template_match::cloudCB,
                          this);  //接收点云
+  ros::param::get("~min_x", min_x);
+  ros::param::get("~min_y", min_y);
+  ros::param::get("~min_z", min_z);
+  ros::param::get("~max_x", max_x);
+  ros::param::get("~max_y", max_y);
+  ros::param::get("~max_z", max_z);
   ros::spinOnce();
 }
 
@@ -84,8 +90,9 @@ void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
   pcl::PointCloud<PointT>::Ptr cloud_filtered(new pcl::PointCloud<PointT>);
   pcl::CropBox<PointT> crop;
 
-  crop.setMin(Eigen::Vector4f(0, 0, 0, 1.0));  //给定立体空间
-  crop.setMax(Eigen::Vector4f(10, 10, 10, 1.0));  //数据随意给的，具体情况分析
+  crop.setMin(Eigen::Vector4f(min_x, min_y, min_z, 1.0));  //给定立体空间
+  crop.setMax(
+      Eigen::Vector4f(max_x, max_y, max_z, 1.0));  //数据随意给的，具体情况分析
   crop.setInputCloud(mycloud);
   crop.setKeepOrganized(true);
   crop.setUserFilterValue(0.1f);

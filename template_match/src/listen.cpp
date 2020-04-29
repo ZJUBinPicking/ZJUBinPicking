@@ -5,7 +5,7 @@ int main(int argc, char **argv) {
   //   ros::Subscriber bat_sub =
   //       nh.subscribe("/camera/depth/points", 10, cloudCB);  //接收点云
   //   ros::spin();
-  ros::init(argc, argv, "pcl_write");
+  ros::init(argc, argv, "template_match");
 
   template_match match;
   match.mainloop();

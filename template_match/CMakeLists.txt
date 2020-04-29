@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
 sensor_msgs
 
+
 )
 
 # find_package(PCL 1.7 REQUIRED)
@@ -37,16 +38,13 @@ include_directories(
    
   #  ${PCL_INCLUDE_DIRS}
 )
-# add_executable(template_match src/main.cpp)
-# target_link_libraries(template_match ${catkin_LIBRARIES})
-# target_link_libraries (template_match libvtkCommonCore-8.2.so.1 libvtkRenderingOpenGL2-8.2.so.1 )
 
-add_executable(output src/output.cpp)
-target_link_libraries(output ${catkin_LIBRARIES})
-# target_link_libraries (output libvtkCommonCore-8.2.so.1 libvtkRenderingOpenGL2-8.2.so.1 )
+add_executable(output_clouds src/output.cpp)
+target_link_libraries(output_clouds ${catkin_LIBRARIES})
+# target_link_libraries (output_clouds libvtkCommonCore-8.2.so.1 libvtkRenderingOpenGL2-8.2.so.1 )
 
-add_executable(listen src/listen.cpp src/template_match.cpp)
-target_link_libraries(listen ${catkin_LIBRARIES})
-# target_link_libraries (listen libvtkCommonCore-8.2.so.1 libvtkRenderingOpenGL2-8.2.so.1)
-# target_link_libraries(listen ${VTK_LIBRARIES} ${PCL_LIBRARIES})
+add_executable(template_match src/listen.cpp src/template_match.cpp)
+target_link_libraries(template_match ${catkin_LIBRARIES})
+# target_link_libraries (template_match libvtkCommonCore-8.2.so.1 libvtkRenderingOpenGL2-8.2.so.1)
+# target_link_libraries(template_match ${VTK_LIBRARIES} ${PCL_LIBRARIES})
 catkin_package()

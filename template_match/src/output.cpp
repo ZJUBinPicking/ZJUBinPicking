@@ -5,13 +5,13 @@
 #include <sensor_msgs/PointCloud2.h>
 
 main(int argc, char **argv) {
-  ros::init(argc, argv, "UandBdetect");
+  ros::init(argc, argv, "output_clouds");
   ros::NodeHandle nh;
   ros::Publisher pcl_pub =
       nh.advertise<sensor_msgs::PointCloud2>("/camera/depth/points", 1);
   pcl::PointCloud<pcl::PointXYZ> cloud;
   sensor_msgs::PointCloud2 output;
-  pcl::io::loadPCDFile("/home/gjx/orbslam/pcl-master/doc/tutorials/content/sources/cylinder_segmentation/table_scene_mug_stereo_textured_cylinder.pcd", cloud);
+  pcl::io::loadPCDFile("/home/gjx/orbslam/test.pcd", cloud);
   // Convert the cloud to ROS message
   pcl::toROSMsg(cloud, output);
   output.header.frame_id =
