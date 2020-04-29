@@ -6,7 +6,12 @@
 	<param name="max_x"  type="double" value="0.1"/>
 	<param name="max_y"  type="double" value="0"/>
 	<param name="max_z"  type="double" value="0.52"/>
+	<param name="model_size"  type="double" value="0.5"/>
+	<param name="theta"  type="double" value="0.5"/>
+	<param name="dx"  type="double" value="0"/>
+	<param name="dy"  type="double" value="0"/>
+	<param name="dz"  type="double" value="-180"/>
 	</node>
-	<!-- <node pkg="template_match" type="output_clouds" name="output_clouds" output="screen">
-	</node> -->
+	<node pkg="template_match" type="output_clouds" name="output_clouds" output="screen">
+	</node>
 </launch>

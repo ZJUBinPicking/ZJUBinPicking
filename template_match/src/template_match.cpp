@@ -36,8 +36,13 @@ void template_match::init() {
   ros::param::get("~max_x", max_x);
   ros::param::get("~max_y", max_y);
   ros::param::get("~max_z", max_z);
-  // this->model_ == PointCloud::Ptr(new PointCloud);
-  // pcl::io::loadPCDFile("/home/gjx/orbslam/coke_model.pcd", *model_);
+  ros::param::get("~model_size", model_size);
+  ros::param::get("~theta", theta);
+  ros::param::get("~dx", dx);
+  ros::param::get("~dy", dy);
+  ros::param::get("~dz", dz);
+  this->model_ = PointCloud::Ptr(new PointCloud);
+  pcl::io::loadPCDFile("/home/gjx/orbslam/coke_model.pcd", *model_);
   ros::spinOnce();
 }
 
@@ -80,7 +85,8 @@ void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
   //   while (!viewer.wasStopped()) {
   //     // 你可以在这里对点云做很多处理
   //   }
-  pcl::PointCloud<PointT>::Ptr mycloud(&cloud);
+  cloud_ = PointCloud::Ptr(&cloud);
+  // pcl::PointCloud<PointT>::Ptr mycloud(&cloud);
   pcl::console::TicToc tt;
 
   std::cout << "ReadImage...\n", tt.tic();
@@ -95,20 +101,23 @@ void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
   crop.setMin(Eigen::Vector4f(min_x, min_y, min_z, 1.0));  //给定立体空间
   crop.setMax(
       Eigen::Vector4f(max_x, max_y, max_z, 1.0));  //数据随意给的，具体情况分析
-  crop.setInputCloud(mycloud);
+  crop.setInputCloud(cloud_);
   crop.setKeepOrganized(true);
   crop.setUserFilterValue(0.1f);
   crop.filter(*cloud_filtered);
   std::cout << "The points data:  " << cloud_filtered->points.size()
             << std::endl;
-  showCloud(mycloud, cloud_filtered);
+  // model_->resize(model_size);
+  pcl::io::savePCDFileASCII("/home/gjx/orbslam/test2.pcd",
+                            *cloud_filtered);  //保存pcd
+  // showCloud(cloud_, model_);
 }
 
-void template_match::match(pcl::PointCloud<PointT>::Ptr mycloud) {
+void template_match::match() {
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(model_);
 
   FeatureCloud template_cloud;
-  template_cloud.setInputCloud(mycloud);
+  template_cloud.setInputCloud(cloud_);
   object_templates.push_back(template_cloud);
 
   const float depth_limit = 1.0;
@@ -155,11 +164,53 @@ void template_match::match(pcl::PointCloud<PointT>::Ptr mycloud) {
       best_alignment.final_transformation.block<3, 1>(0, 3);
 }
 
+pcl::PointCloud<pcl::PointXYZ>::Ptr template_match::transclouds(
+    pcl::PointCloud<pcl::PointXYZ>::Ptr source_cloud, double theta, double dx,
+    double dy, double dz) {
+  Eigen::Matrix4f transform_1 = Eigen::Matrix4f::Identity();
+
+  // Define a rotation matrix (see
+  // https://en.wikipedia.org/wiki/Rotation_matrix)
+  // float theta = M_PI / 2;  // The angle of rotation in radians
+  transform_1(0, 0) = cos(theta);
+  transform_1(0, 1) = -sin(theta);
+  transform_1(1, 0) = sin(theta);
+  transform_1(1, 1) = cos(theta);
+  //    (row, column)
+
+  // Define a translation of 2.5 meters on the x axis.
+  transform_1(0, 3) = dx;
+  transform_1(1, 3) = dy;
+  transform_1(2, 3) = dz;
+
+  // Print the transformation
+  printf("Method #1: using a Matrix4f\n");
+  std::cout << transform_1 << std::endl;
+  /*  METHOD #2: Using a Affine3f
+    This method is easier and less error prone
+  */
+  Eigen::Affine3f transform_2 = Eigen::Affine3f::Identity();
+  // Define a translation of 2.5 meters on the x axis.
+  transform_2.translation() << dx, dy, dz;
+  // The same rotation matrix as before; theta radians arround Z axis
+  transform_2.rotate(Eigen::AngleAxisf(theta, Eigen::Vector3f::UnitZ()));
+  // Print the transformation
+  printf("\nMethod #2: using an Affine3f\n");
+  std::cout << transform_2.matrix() << std::endl;
+  // Executing the transformation
+  pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_cloud(
+      new pcl::PointCloud<pcl::PointXYZ>());
+  // You can either apply transform_1 or transform_2; they are the same
+  pcl::transformPointCloud(*source_cloud, *transformed_cloud, transform_2);
+  showCloud(source_cloud, transformed_cloud);
+}
+
 void template_match::mainloop() {
   ros::Rate loop_rate_class(10);
   while (1) {
     // cout << "666" << endl;
     ros::spinOnce();
+    transclouds(this->model_, this->theta, this->dx, this->dy, this->dz);
     loop_rate_class.sleep();
   }
 }

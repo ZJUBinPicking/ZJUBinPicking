@@ -212,11 +212,13 @@ class TemplateAlignment {
 class template_match {
  public:
   double min_x, min_y, min_z, max_x, max_y, max_z;
+  double model_size;
+  double theta,dx,dy,dz;
   friend class TemplateAlignment;
   friend class FeatureCloud;
   ros::Subscriber bat_sub;
   PointCloud::Ptr model_;
-  pcl::PointCloud<PointT> cloud;
+  pcl::PointCloud<PointT>::Ptr cloud_;
   std::vector<FeatureCloud> object_templates;
   template_match();
   void showCloud(pcl::PointCloud<PointT>::Ptr cloud1,
@@ -224,6 +226,9 @@ class template_match {
   void cloudCB(const sensor_msgs::PointCloud2 &input);
   void init();
   void mainloop();
-  void match(pcl::PointCloud<PointT>::Ptr mycloud);
+  void match();
+  pcl::PointCloud<pcl::PointXYZ>::Ptr transclouds(
+      pcl::PointCloud<pcl::PointXYZ>::Ptr source_cloud, double theta, double dx,
+      double dy, double dz);
 };
 #endif
