@@ -42,7 +42,7 @@ void template_match::init() {
   ros::param::get("~dy", dy);
   ros::param::get("~dz", dz);
   this->model_ = PointCloud::Ptr(new PointCloud);
-  pcl::io::loadPCDFile("/home/gjx/orbslam/coke_model.pcd", *model_);
+  pcl::io::loadPCDFile("/home/gjx/orbslam/catkin_ws/cylinder.pcd", *model_);
   ros::spinOnce();
 }
 
@@ -108,9 +108,9 @@ void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
   std::cout << "The points data:  " << cloud_filtered->points.size()
             << std::endl;
   // model_->resize(model_size);
-  pcl::io::savePCDFileASCII("/home/gjx/orbslam/test2.pcd",
+  pcl::io::savePCDFileASCII("/home/gjx/orbslam/filter.pcd",
                             *cloud_filtered);  //保存pcd
-  // showCloud(cloud_, model_);
+  showCloud(cloud_, cloud_filtered);
 }
 
 void template_match::match() {
@@ -202,7 +202,8 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr template_match::transclouds(
       new pcl::PointCloud<pcl::PointXYZ>());
   // You can either apply transform_1 or transform_2; they are the same
   pcl::transformPointCloud(*source_cloud, *transformed_cloud, transform_2);
-  showCloud(source_cloud, transformed_cloud);
+  transformed_cloud->resize(model_size);
+  // showCloud(source_cloud, transformed_cloud);
 }
 
 void template_match::mainloop() {
@@ -210,7 +211,7 @@ void template_match::mainloop() {
   while (1) {
     // cout << "666" << endl;
     ros::spinOnce();
-    transclouds(this->model_, this->theta, this->dx, this->dy, this->dz);
+    // transclouds(this->model_, this->theta, this->dx, this->dy, this->dz);
     loop_rate_class.sleep();
   }
 }
