@@ -42,8 +42,8 @@ void template_match::init() {
   ros::param::get("~dy", dy);
   ros::param::get("~dz", dz);
   this->model_ = PointCloud::Ptr(new PointCloud);
-  pcl::io::loadPCDFile("/home/gjx/orbslam/catkin_ws/cylinder.pcd", *model_);
-  ros::spinOnce();
+  pcl::io::loadPCDFile("/home/gjx/orbslam/model_1.pcd", *model_);
+  // ros::spinOnce();
 }
 
 void template_match::showCloud(pcl::PointCloud<PointT>::Ptr cloud1,
@@ -85,6 +85,8 @@ void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
   //   while (!viewer.wasStopped()) {
   //     // 你可以在这里对点云做很多处理
   //   }
+
+  // if (!cloud_->empty()) cloud_->~PointCloud();
   cloud_ = PointCloud::Ptr(&cloud);
   // pcl::PointCloud<PointT>::Ptr mycloud(&cloud);
   pcl::console::TicToc tt;
@@ -95,48 +97,96 @@ void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
   //       "/home/gjx/orbslam/pcl-master/doc/tutorials/content/sources/"
   //       "cylinder_segmentation/table_scene_mug_stereo_textured_cylinder.pcd",
   //       *mycloud);
+
   pcl::PointCloud<PointT>::Ptr cloud_filtered(new pcl::PointCloud<PointT>);
   pcl::CropBox<PointT> crop;
 
   crop.setMin(Eigen::Vector4f(min_x, min_y, min_z, 1.0));  //给定立体空间
-  crop.setMax(
-      Eigen::Vector4f(max_x, max_y, max_z, 1.0));  //数据随意给的，具体情况分析
+  crop.setMax(Eigen::Vector4f(max_x, max_y, max_z, 1.0));
+  //数据随意给的，具体情况分析
   crop.setInputCloud(cloud_);
   crop.setKeepOrganized(true);
   crop.setUserFilterValue(0.1f);
   crop.filter(*cloud_filtered);
+  pcl::PassThrough<pcl::PointXYZ> pass;
+  pass.setInputCloud(cloud_filtered);
+  pass.setFilterFieldName("z");  //设置过滤时所需要点云类型的Z字段
+  pass.setFilterLimits(0.5, 0.53);      //设置在过滤字段的范围
+  pass.setFilterLimitsNegative(false);  //保留还是过滤掉范围内的点
+  pass.filter(*cloud_filtered);
   std::cout << "The points data:  " << cloud_filtered->points.size()
             << std::endl;
   // model_->resize(model_size);
   pcl::io::savePCDFileASCII("/home/gjx/orbslam/filter.pcd",
                             *cloud_filtered);  //保存pcd
-  showCloud(cloud_, cloud_filtered);
+  // showCloud(model_, cloud_filtered);
+  cloud_ = cloud_filtered;
+  cluster();
+}
+void template_match::cluster() {
+  pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(
+      new pcl::search::KdTree<pcl::PointXYZ>);
+  tree->setInputCloud(cloud_);
+
+  std::vector<pcl::PointIndices> cluster_indices;
+  pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
+  ec.setClusterTolerance(0.02);  // 2cm
+  ec.setMinClusterSize(100);
+  ec.setMaxClusterSize(25000);
+  ec.setSearchMethod(tree);
+  ec.setInputCloud(cloud_);
+  ec.extract(cluster_indices);
+  // showCloud(cloud,cloud_filtered);
+  int j = 0;
+  for (std::vector<pcl::PointIndices>::const_iterator it =
+           cluster_indices.begin();
+       it != cluster_indices.end(); ++it) {
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster(
+        new pcl::PointCloud<pcl::PointXYZ>);
+    for (std::vector<int>::const_iterator pit = it->indices.begin();
+         pit != it->indices.end(); ++pit)
+      cloud_cluster->points.push_back(cloud_->points[*pit]);  //*
+    cloud_cluster->width = cloud_cluster->points.size();
+    cloud_cluster->height = 1;
+    cloud_cluster->is_dense = true;
+
+    std::cout << "PointCloud representing the Cluster: "
+              << cloud_cluster->points.size() << " data points." << std::endl;
+
+    std::stringstream ss;
+
+    ss << "cloud_cluster_" << j;
+    goals.push_back(cloud_cluster);
+    j++;
+  }
+  cout << goals.size() << endl;
+  match();
 }
 
 void template_match::match() {
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(model_);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(goals[1]);
 
   FeatureCloud template_cloud;
-  template_cloud.setInputCloud(cloud_);
+  template_cloud.setInputCloud(model_);
   object_templates.push_back(template_cloud);
 
-  const float depth_limit = 1.0;
-  pcl::PassThrough<pcl::PointXYZ> pass;
-  pass.setInputCloud(cloud);
-  pass.setFilterFieldName("z");
-  pass.setFilterLimits(0, depth_limit);
-  pass.filter(*cloud);
+  // const float depth_limit = 1.0;
+  // pcl::PassThrough<pcl::PointXYZ> pass;
+  // pass.setInputCloud(cloud);
+  // pass.setFilterFieldName("z");
+  // pass.setFilterLimits(0, depth_limit);
+  // pass.filter(*cloud);
 
   // ... and downsampling the point cloud
-  const float voxel_grid_size = 0.005f;
-  pcl::VoxelGrid<pcl::PointXYZ> vox_grid;
-  vox_grid.setInputCloud(cloud);
-  vox_grid.setLeafSize(voxel_grid_size, voxel_grid_size, voxel_grid_size);
-  // vox_grid.filter (*cloud); // Please see this
-  pcl::PointCloud<pcl::PointXYZ>::Ptr tempCloud(
-      new pcl::PointCloud<pcl::PointXYZ>);
-  vox_grid.filter(*tempCloud);
-  cloud = tempCloud;
+  // const float voxel_grid_size = 0.005f;
+  // pcl::VoxelGrid<pcl::PointXYZ> vox_grid;
+  // vox_grid.setInputCloud(cloud);
+  // vox_grid.setLeafSize(voxel_grid_size, voxel_grid_size, voxel_grid_size);
+  // // vox_grid.filter (*cloud); // Please see this
+  // pcl::PointCloud<pcl::PointXYZ>::Ptr tempCloud(
+  //     new pcl::PointCloud<pcl::PointXYZ>);
+  // vox_grid.filter(*tempCloud);
+  // cloud = tempCloud;
 
   // Assign to the target FeatureCloud
   FeatureCloud target_cloud;
@@ -162,6 +212,27 @@ void template_match::match() {
       best_alignment.final_transformation.block<3, 3>(0, 0);
   Eigen::Vector3f translation =
       best_alignment.final_transformation.block<3, 1>(0, 3);
+  // Eigen::Affine3f transform_2 = Eigen::Affine3f::Identity();
+  // transform_2.translation(translation);
+  // // The same rotation matrix as before; theta radians arround Z axis
+  // transform_2.rotation = rotation;
+
+  // pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_cloud(
+  //     new pcl::PointCloud<pcl::PointXYZ>());
+  // // You can either apply transform_1 or transform_2; they are the same
+  // pcl::transformPointCloud(*cloud, *transformed_cloud, transform_2);
+  // transformed_cloud->resize(model_size);
+  printf("\n");
+  printf("    | %6.3f %6.3f %6.3f | \n", rotation(0, 0), rotation(0, 1),
+         rotation(0, 2));
+  printf("R = | %6.3f %6.3f %6.3f | \n", rotation(1, 0), rotation(1, 1),
+         rotation(1, 2));
+  printf("    | %6.3f %6.3f %6.3f | \n", rotation(2, 0), rotation(2, 1),
+         rotation(2, 2));
+  printf("\n");
+  printf("t = < %0.3f, %0.3f, %0.3f >\n", translation(0), translation(1),
+         translation(2));
+  showCloud(cloud, model_);
 }
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr template_match::transclouds(
@@ -203,15 +274,15 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr template_match::transclouds(
   // You can either apply transform_1 or transform_2; they are the same
   pcl::transformPointCloud(*source_cloud, *transformed_cloud, transform_2);
   transformed_cloud->resize(model_size);
-  // showCloud(source_cloud, transformed_cloud);
+  showCloud(source_cloud, transformed_cloud);
 }
 
 void template_match::mainloop() {
-  ros::Rate loop_rate_class(10);
+  // ros::Rate loop_rate_class(10);
   while (1) {
     // cout << "666" << endl;
     ros::spinOnce();
     // transclouds(this->model_, this->theta, this->dx, this->dy, this->dz);
-    loop_rate_class.sleep();
+    // loop_rate_class.sleep();
   }
 }

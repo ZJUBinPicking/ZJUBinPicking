@@ -20,6 +20,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/registration/ia_ransac.h>
+#include <pcl/segmentation/extract_clusters.h>
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl_conversions/pcl_conversions.h>
@@ -44,8 +45,8 @@ class FeatureCloud {
 
   FeatureCloud()
       : search_method_xyz_(new SearchMethod),
-        normal_radius_(0.02f),
-        feature_radius_(0.02f) {}
+        normal_radius_(0.05f),
+        feature_radius_(0.05f) {}
 
   ~FeatureCloud() {}
 
@@ -124,9 +125,9 @@ class TemplateAlignment {
   };
 
   TemplateAlignment()
-      : min_sample_distance_(0.05f),
-        max_correspondence_distance_(0.01f * 0.01f),
-        nr_iterations_(500) {
+      : min_sample_distance_(0.005f),
+        max_correspondence_distance_(0.1f * 0.1f),
+        nr_iterations_(1000) {
     // Initialize the parameters in the Sample Consensus Initial Alignment
     // (SAC-IA) algorithm
     sac_ia_.setMinSampleDistance(min_sample_distance_);
@@ -213,12 +214,14 @@ class template_match {
  public:
   double min_x, min_y, min_z, max_x, max_y, max_z;
   double model_size;
-  double theta,dx,dy,dz;
+  double theta, dx, dy, dz;
   friend class TemplateAlignment;
   friend class FeatureCloud;
   ros::Subscriber bat_sub;
   PointCloud::Ptr model_;
   pcl::PointCloud<PointT>::Ptr cloud_;
+  vector<pcl::PointCloud<PointT>::Ptr> goals;
+
   std::vector<FeatureCloud> object_templates;
   template_match();
   void showCloud(pcl::PointCloud<PointT>::Ptr cloud1,
@@ -227,6 +230,7 @@ class template_match {
   void init();
   void mainloop();
   void match();
+  void cluster();
   pcl::PointCloud<pcl::PointXYZ>::Ptr transclouds(
       pcl::PointCloud<pcl::PointXYZ>::Ptr source_cloud, double theta, double dx,
       double dy, double dz);
