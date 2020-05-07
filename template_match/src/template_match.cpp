@@ -117,9 +117,9 @@ void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
   std::cout << "The points data:  " << cloud_filtered->points.size()
             << std::endl;
   // model_->resize(model_size);
-  pcl::io::savePCDFileASCII("/home/gjx/orbslam/filter.pcd",
-                            *cloud_filtered);  //保存pcd
-  // showCloud(model_, cloud_filtered);
+  // pcl::io::savePCDFileASCII("/home/gjx/orbslam/filter.pcd",
+  //                           *cloud_filtered);  //保存pcd
+  // showCloud(cloud_, cloud_filtered);
   cloud_ = cloud_filtered;
   cluster();
 }
@@ -165,38 +165,20 @@ void template_match::cluster() {
 
 void template_match::match() {
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(goals[1]);
-
+  // for (int i = 0; i < goals.size(); i++) {
   FeatureCloud template_cloud;
   template_cloud.setInputCloud(model_);
   object_templates.push_back(template_cloud);
-
-  // const float depth_limit = 1.0;
-  // pcl::PassThrough<pcl::PointXYZ> pass;
-  // pass.setInputCloud(cloud);
-  // pass.setFilterFieldName("z");
-  // pass.setFilterLimits(0, depth_limit);
-  // pass.filter(*cloud);
-
-  // ... and downsampling the point cloud
-  // const float voxel_grid_size = 0.005f;
-  // pcl::VoxelGrid<pcl::PointXYZ> vox_grid;
-  // vox_grid.setInputCloud(cloud);
-  // vox_grid.setLeafSize(voxel_grid_size, voxel_grid_size, voxel_grid_size);
-  // // vox_grid.filter (*cloud); // Please see this
-  // pcl::PointCloud<pcl::PointXYZ>::Ptr tempCloud(
-  //     new pcl::PointCloud<pcl::PointXYZ>);
-  // vox_grid.filter(*tempCloud);
-  // cloud = tempCloud;
-
-  // Assign to the target FeatureCloud
-  FeatureCloud target_cloud;
-  target_cloud.setInputCloud(cloud);
-
   // Set the TemplateAlignment inputs
   TemplateAlignment template_align;
   for (size_t i = 0; i < object_templates.size(); ++i) {
     template_align.addTemplateCloud(object_templates[i]);
   }
+  // cloud.push_back(goals[i]);
+
+  // Assign to the target FeatureCloud
+  FeatureCloud target_cloud;
+  target_cloud.setInputCloud(cloud);
   template_align.setTargetCloud(target_cloud);
 
   // Find the best template alignment
@@ -232,7 +214,47 @@ void template_match::match() {
   printf("\n");
   printf("t = < %0.3f, %0.3f, %0.3f >\n", translation(0), translation(1),
          translation(2));
-  showCloud(cloud, model_);
+  pcl::PointCloud<pcl::PointXYZ> transformed_cloud;
+  pcl::transformPointCloud(*best_template.getPointCloud(), transformed_cloud,
+                           best_alignment.final_transformation);
+  // pcl::io::savePCDFileBinary("output.pcd", transformed_cloud);
+
+  // showCloud(PointCloud::Ptr(&transformed_cloud), model_);
+  pcl::visualization::PCLVisualizer viewer("example");
+  // 设置坐标系系统
+  viewer.addCoordinateSystem(0.5, "cloud", 0);
+  // 设置背景色
+  viewer.setBackgroundColor(0.05, 0.05, 0.05,
+                            0);  // Setting background to a dark grey
+
+  // 1. 旋转后的点云rotated --------------------------------
+  pcl::PointCloud<pcl::PointXYZ>::Ptr t_cloud(&transformed_cloud);
+  PCLHandler transformed_cloud_handler(t_cloud, 255, 255, 255);
+  viewer.addPointCloud(t_cloud, transformed_cloud_handler, "transformed_cloud");
+  // 设置渲染属性（点大小）
+  viewer.setPointCloudRenderingProperties(
+      pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "transformed_cloud");
+
+  // 2. 目标点云target --------------------------------
+  PCLHandler target_cloud_handler(cloud, 255, 100, 100);
+  viewer.addPointCloud(cloud, target_cloud_handler, "target_cloud");
+  // 设置渲染属性（点大小）
+  viewer.setPointCloudRenderingProperties(
+      pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "target_cloud");
+
+  // 3. 模板点云template --------------------------------
+  PCLHandler template_cloud_handler(cloud, 100, 255, 255);
+  viewer.addPointCloud(best_template.getPointCloud(), template_cloud_handler,
+                       "template_cloud");
+  // 设置渲染属性（点大小）
+  viewer.setPointCloudRenderingProperties(
+      pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "template_cloud");
+
+  while (
+      !viewer
+           .wasStopped()) {  // Display the visualiser until 'q' key is pressed
+    viewer.spinOnce();
+  }
 }
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr template_match::transclouds(
@@ -274,7 +296,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr template_match::transclouds(
   // You can either apply transform_1 or transform_2; they are the same
   pcl::transformPointCloud(*source_cloud, *transformed_cloud, transform_2);
   transformed_cloud->resize(model_size);
-  showCloud(source_cloud, transformed_cloud);
+  // showCloud(source_cloud, transformed_cloud);
 }
 
 void template_match::mainloop() {

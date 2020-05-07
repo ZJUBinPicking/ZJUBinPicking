@@ -1,7 +1,7 @@
 #ifndef TEMPLATE_MATCH
 #define TEMPLATE_MATCH
-
 #include <pcl/console/time.h>
+#include <std_msgs/Int8.h>
 //#include <pcl/features/fpfh.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/filters/crop_box.h>
@@ -26,6 +26,8 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
+typedef pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
+    PCLHandler;
 
 #include <Eigen/Core>
 #include <fstream>
@@ -214,6 +216,7 @@ class template_match {
  public:
   double min_x, min_y, min_z, max_x, max_y, max_z;
   double model_size;
+  int object_index = 0;
   double theta, dx, dy, dz;
   friend class TemplateAlignment;
   friend class FeatureCloud;
@@ -221,7 +224,7 @@ class template_match {
   PointCloud::Ptr model_;
   pcl::PointCloud<PointT>::Ptr cloud_;
   vector<pcl::PointCloud<PointT>::Ptr> goals;
-
+  // vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> t_cloud;
   std::vector<FeatureCloud> object_templates;
   template_match();
   void showCloud(pcl::PointCloud<PointT>::Ptr cloud1,
@@ -231,6 +234,7 @@ class template_match {
   void mainloop();
   void match();
   void cluster();
+  void commandCB(const std_msgs::Int8 &msg);
   pcl::PointCloud<pcl::PointXYZ>::Ptr transclouds(
       pcl::PointCloud<pcl::PointXYZ>::Ptr source_cloud, double theta, double dx,
       double dy, double dz);
