@@ -29,6 +29,10 @@
 typedef pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
     PCLHandler;
 
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
+#include <pcl/registration/icp.h>
+
 #include <Eigen/Core>
 #include <fstream>
 #include <iostream>
@@ -226,6 +230,7 @@ class template_match {
   vector<pcl::PointCloud<PointT>::Ptr> goals;
   // vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> t_cloud;
   std::vector<FeatureCloud> object_templates;
+  vector<Eigen::Matrix4f> final_trans;
   template_match();
   void showCloud(pcl::PointCloud<PointT>::Ptr cloud1,
                  pcl::PointCloud<PointT>::Ptr cloud2);
@@ -238,5 +243,7 @@ class template_match {
   pcl::PointCloud<pcl::PointXYZ>::Ptr transclouds(
       pcl::PointCloud<pcl::PointXYZ>::Ptr source_cloud, double theta, double dx,
       double dy, double dz);
+  Eigen::Matrix4f icp(pcl::PointCloud<PointT>::Ptr cloud_in,
+                      pcl::PointCloud<PointT>::Ptr cloud_out);
 };
 #endif

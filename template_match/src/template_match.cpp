@@ -69,6 +69,7 @@ void template_match::showCloud(pcl::PointCloud<PointT>::Ptr cloud1,
 }
 
 void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
+  final_trans.clear();
   pcl::PointCloud<pcl::PointXYZ> cloud;
   pcl::PointCloud<pcl::PointXYZ> *cloudptr = new pcl::PointCloud<pcl::PointXYZ>;
   pcl::fromROSMsg(input, *cloudptr);  //从ROS类型消息转为PCL类型消息
@@ -218,10 +219,20 @@ void template_match::match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal) {
   printf("\n");
   printf("t = < %0.3f, %0.3f, %0.3f >\n", translation(0), translation(1),
          translation(2));
+
   pcl::PointCloud<pcl::PointXYZ> *transformed_cloud =
       new pcl::PointCloud<pcl::PointXYZ>;
   pcl::transformPointCloud(*best_template.getPointCloud(), *transformed_cloud,
                            best_alignment.final_transformation);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr f_cloud(transformed_cloud);
+
+  final_trans.push_back(icp(f_cloud, cloud) *
+                        best_alignment.final_transformation);
+
+  pcl::PointCloud<pcl::PointXYZ> *transformed_cloud2 =
+      new pcl::PointCloud<pcl::PointXYZ>;
+  pcl::transformPointCloud(*best_template.getPointCloud(), *transformed_cloud2,
+                           final_trans.back());
   // pcl::io::savePCDFileBinary("output.pcd", transformed_cloud);
 
   // showCloud(PointCloud::Ptr(&transformed_cloud), model_);
@@ -234,7 +245,7 @@ void template_match::match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal) {
                             0);  // Setting background to a dark grey
 
   // 1. 旋转后的点云rotated --------------------------------
-  pcl::PointCloud<pcl::PointXYZ>::Ptr t_cloud(transformed_cloud);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr t_cloud(transformed_cloud2);
   PCLHandler transformed_cloud_handler(t_cloud, 255, 255, 255);
   viewer.addPointCloud(t_cloud, transformed_cloud_handler, "transformed_cloud");
   // 设置渲染属性（点大小）
@@ -249,18 +260,69 @@ void template_match::match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal) {
       pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "target_cloud");
 
   // // 3. 模板点云template --------------------------------
-  // PCLHandler template_cloud_handler(cloud, 100, 255, 255);
-  // viewer.addPointCloud(best_template.getPointCloud(), template_cloud_handler,
-  //                      "template_cloud");
-  // // 设置渲染属性（点大小）
-  // viewer.setPointCloudRenderingProperties(
-  //     pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "template_cloud");
+  PCLHandler template_cloud_handler(f_cloud, 100, 255, 255);
+  viewer.addPointCloud(f_cloud, template_cloud_handler, "template_cloud");
+  // 设置渲染属性（点大小）
+  viewer.setPointCloudRenderingProperties(
+      pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "template_cloud");
 
   while (
       !viewer
            .wasStopped()) {  // Display the visualiser until 'q' key is pressed
     viewer.spinOnce();
   }
+}
+Eigen::Matrix4f template_match::icp(pcl::PointCloud<PointT>::Ptr cloud_in,
+                                    pcl::PointCloud<PointT>::Ptr cloud_out) {
+  pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+  icp.setInputSource(cloud_in);
+  icp.setInputTarget(cloud_out);
+
+  pcl::PointCloud<pcl::PointXYZ> Final;
+  icp.align(Final);
+
+  std::cout << "has converged:" << icp.hasConverged()
+            << " score: " << icp.getFitnessScore() << std::endl;
+  std::cout << icp.getFinalTransformation() << std::endl;
+  pcl::PointCloud<pcl::PointXYZ> *transformed_cloud =
+      new pcl::PointCloud<pcl::PointXYZ>;
+  pcl::transformPointCloud(*cloud_in, *transformed_cloud,
+                           icp.getFinalTransformation());
+  // pcl::visualization::PCLVisualizer viewer("example");
+  // // 设置坐标系系统
+  // viewer.addCoordinateSystem(0.5, "cloud", 0);
+  // // 设置背景色
+  // viewer.setBackgroundColor(0.05, 0.05, 0.05,
+  //                           0);  // Setting background to a dark grey
+
+  // // 1. 旋转后的点云rotated --------------------------------
+  // pcl::PointCloud<pcl::PointXYZ>::Ptr t_cloud(transformed_cloud);
+  // PCLHandler transformed_cloud_handler(t_cloud, 0, 255, 255);
+  // viewer.addPointCloud(t_cloud, transformed_cloud_handler,
+  // "transformed_cloud");
+  // // 设置渲染属性（点大小）
+  // viewer.setPointCloudRenderingProperties(
+  //     pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "transformed_cloud");
+
+  // PCLHandler target_cloud_handler(cloud_out, 255, 100, 100);
+  // viewer.addPointCloud(cloud_out, target_cloud_handler, "target_cloud");
+  // // 设置渲染属性（点大小）
+  // viewer.setPointCloudRenderingProperties(
+  //     pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "target_cloud");
+
+  // PCLHandler init_cloud_handler(cloud_in, 255, 255, 255);
+  // viewer.addPointCloud(cloud_in, init_cloud_handler, "init");
+  // // 设置渲染属性（点大小）
+  // viewer.setPointCloudRenderingProperties(
+  //     pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "init");
+
+  // while (
+  //     !viewer
+  //          .wasStopped()) {  // Display the visualiser until 'q' key is
+  //          pressed
+  //   viewer.spinOnce();
+  // }
+  return icp.getFinalTransformation();
 }
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr template_match::transclouds(
