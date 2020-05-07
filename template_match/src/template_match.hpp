@@ -222,7 +222,7 @@ class template_match {
   friend class FeatureCloud;
   ros::Subscriber bat_sub;
   PointCloud::Ptr model_;
-  pcl::PointCloud<PointT>::Ptr cloud_;
+  // pcl::PointCloud<PointT>::Ptr cloud_;
   vector<pcl::PointCloud<PointT>::Ptr> goals;
   // vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> t_cloud;
   std::vector<FeatureCloud> object_templates;
@@ -232,8 +232,8 @@ class template_match {
   void cloudCB(const sensor_msgs::PointCloud2 &input);
   void init();
   void mainloop();
-  void match();
-  void cluster();
+  void match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal);
+  void cluster(pcl::PointCloud<PointT>::Ptr cloud_);
   void commandCB(const std_msgs::Int8 &msg);
   pcl::PointCloud<pcl::PointXYZ>::Ptr transclouds(
       pcl::PointCloud<pcl::PointXYZ>::Ptr source_cloud, double theta, double dx,
