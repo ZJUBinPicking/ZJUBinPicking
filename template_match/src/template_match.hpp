@@ -38,6 +38,11 @@ typedef pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
 #include <iostream>
 #include <limits>
 #include <vector>
+
+#include "bpmsg/arm_state.h"
+#include "bpmsg/pose.h"
+
+// #include "template_match/pose.h"
 typedef pcl::PointXYZ PointT;
 typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
 typedef pcl::PointCloud<pcl::Normal> SurfaceNormals;
@@ -222,9 +227,13 @@ class template_match {
   double model_size;
   int object_index = 0;
   double theta, dx, dy, dz;
+  int arm_state;
   friend class TemplateAlignment;
   friend class FeatureCloud;
   ros::Subscriber bat_sub;
+  ros::Subscriber arm_sub;
+  ros::Publisher trans_pub;
+  bpmsg::pose result_pose;
   PointCloud::Ptr model_;
   // pcl::PointCloud<PointT>::Ptr cloud_;
   vector<pcl::PointCloud<PointT>::Ptr> goals;
@@ -235,6 +244,7 @@ class template_match {
   void showCloud(pcl::PointCloud<PointT>::Ptr cloud1,
                  pcl::PointCloud<PointT>::Ptr cloud2);
   void cloudCB(const sensor_msgs::PointCloud2 &input);
+  void armCB(const bpmsg::arm_state &msg);
   void init();
   void mainloop();
   void match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal);

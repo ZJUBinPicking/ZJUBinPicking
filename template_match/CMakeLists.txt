@@ -11,10 +11,16 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_ros
   cv_bridge
 sensor_msgs
-
-
+std_msgs
+  message_generation
+bpmsg
 )
 
+generate_messages(
+   DEPENDENCIES
+   std_msgs
+   
+)
 # find_package(PCL 1.7 REQUIRED)
 # include_directories(${PCL_INCLUDE_DIRS})
 # link_directories(${PCL_LIBRARY_DIRS})
@@ -25,6 +31,9 @@ sensor_msgs
     CATKIN_DEPENDS roscpp
                    pcl_conversions
                    pcl_ros
+                   std_msgs
+                  message_runtime
+                 
                     # pcl_ros 
   )
 
@@ -42,7 +51,7 @@ include_directories(
 add_executable(output_clouds src/output.cpp)
 target_link_libraries(output_clouds ${catkin_LIBRARIES})
 # target_link_libraries (output_clouds libvtkCommonCore-8.2.so.1 libvtkRenderingOpenGL2-8.2.so.1 )
-
+#add_dependencies(template_match ${catkin_EXPORTED_TARGETS})
 add_executable(template_match src/listen.cpp src/template_match.cpp)
 target_link_libraries(template_match ${catkin_LIBRARIES})
 # target_link_libraries (template_match libvtkCommonCore-8.2.so.1 libvtkRenderingOpenGL2-8.2.so.1)

@@ -30,6 +30,11 @@ void template_match::init() {
   ros::NodeHandle nh;
   bat_sub = nh.subscribe("/camera/depth/points", 1, &template_match::cloudCB,
                          this);  //接收点云
+  arm_sub = nh.subscribe("/arm_state", 1, &template_match::armCB,
+                         this);  //接收点云
+
+  trans_pub = nh.advertise<bpmsg::pose>("/goal_translation", 30);
+
   ros::param::get("~min_x", min_x);
   ros::param::get("~min_y", min_y);
   ros::param::get("~min_z", min_z);
@@ -67,9 +72,13 @@ void template_match::showCloud(pcl::PointCloud<PointT>::Ptr cloud1,
     // boost::this_thread::sleep(boost::posix_time::microseconds(100000));
   };
 }
+void template_match::armCB(const bpmsg::arm_state &msg) {
+  this->arm_state = msg.pick_state;
+}
 
 void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
   final_trans.clear();
+  goals.clear();
   pcl::PointCloud<pcl::PointXYZ> cloud;
   pcl::PointCloud<pcl::PointXYZ> *cloudptr = new pcl::PointCloud<pcl::PointXYZ>;
   pcl::fromROSMsg(input, *cloudptr);  //从ROS类型消息转为PCL类型消息
@@ -123,7 +132,20 @@ void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
   //                           *cloud_filtered);  //保存pcd
   // showCloud(cloud_, cloud_filtered);
   mycloud = cloud_filtered;
-  cluster(mycloud);
+
+  // if arm is waiting for picking or fail in picking, the program will continue
+  // detecting
+  if (arm_state == 0 || arm_state == 2) {
+    trans_pub.publish(result_pose);
+    cluster(mycloud);
+  }
+  // if arm has already picked the object, the program will stop detect, and
+  // restart for next detection
+  else if (arm_state == 1) {
+    result_pose.if_detect = 0;
+    result_pose.object_num = 0;
+    trans_pub.publish(result_pose);
+  }
 }
 
 void template_match::cluster(pcl::PointCloud<PointT>::Ptr cloud_) {
@@ -140,12 +162,14 @@ void template_match::cluster(pcl::PointCloud<PointT>::Ptr cloud_) {
   ec.setInputCloud(cloud_);
   ec.extract(cluster_indices);
   // showCloud(cloud,cloud_filtered);
+
   int j = 0;
   for (std::vector<pcl::PointIndices>::const_iterator it =
            cluster_indices.begin();
        it != cluster_indices.end(); ++it) {
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster(
         new pcl::PointCloud<pcl::PointXYZ>);
+
     for (std::vector<int>::const_iterator pit = it->indices.begin();
          pit != it->indices.end(); ++pit)
       cloud_cluster->points.push_back(cloud_->points[*pit]);  //*
@@ -164,6 +188,17 @@ void template_match::cluster(pcl::PointCloud<PointT>::Ptr cloud_) {
     match(cloud_cluster);
   }
   cout << goals.size() << endl;
+  for (int i = 0; i < 4; i++) {
+    for (int j = 0; j < 4; j++) {
+      result_pose.translation[i * 4 + j] = final_trans.back()(i, j);
+    }
+  }
+  result_pose.object_num = goals.size();
+  if (goals.size())
+    result_pose.if_detect = result_pose.DETECTSUCCESS;
+  else
+    result_pose.if_detect = result_pose.NOTHING;
+  trans_pub.publish(result_pose);
   // showCloud(goals[0], cloud_);
 }
 
@@ -233,45 +268,49 @@ void template_match::match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal) {
       new pcl::PointCloud<pcl::PointXYZ>;
   pcl::transformPointCloud(*best_template.getPointCloud(), *transformed_cloud2,
                            final_trans.back());
+
+  // trans_pub.publish(result_pose);
   // pcl::io::savePCDFileBinary("output.pcd", transformed_cloud);
 
   // showCloud(PointCloud::Ptr(&transformed_cloud), model_);
+  /*
+    pcl::visualization::PCLVisualizer viewer("example");
+    // 设置坐标系系统
+    viewer.addCoordinateSystem(0.5, "cloud", 0);
+    // 设置背景色
+    viewer.setBackgroundColor(0.05, 0.05, 0.05,
+                              0);  // Setting background to a dark grey
 
-  pcl::visualization::PCLVisualizer viewer("example");
-  // 设置坐标系系统
-  viewer.addCoordinateSystem(0.5, "cloud", 0);
-  // 设置背景色
-  viewer.setBackgroundColor(0.05, 0.05, 0.05,
-                            0);  // Setting background to a dark grey
+    // 1. 旋转后的点云rotated --------------------------------
+    pcl::PointCloud<pcl::PointXYZ>::Ptr t_cloud(transformed_cloud2);
+    PCLHandler transformed_cloud_handler(t_cloud, 255, 255, 255);
+    viewer.addPointCloud(t_cloud, transformed_cloud_handler,
+    "transformed_cloud");
+    // 设置渲染属性（点大小）
+    viewer.setPointCloudRenderingProperties(
+        pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "transformed_cloud");
 
-  // 1. 旋转后的点云rotated --------------------------------
-  pcl::PointCloud<pcl::PointXYZ>::Ptr t_cloud(transformed_cloud2);
-  PCLHandler transformed_cloud_handler(t_cloud, 255, 255, 255);
-  viewer.addPointCloud(t_cloud, transformed_cloud_handler, "transformed_cloud");
-  // 设置渲染属性（点大小）
-  viewer.setPointCloudRenderingProperties(
-      pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "transformed_cloud");
+    // 2. 目标点云target --------------------------------
+    PCLHandler target_cloud_handler(cloud, 255, 100, 100);
+    viewer.addPointCloud(cloud, target_cloud_handler, "target_cloud");
+    // 设置渲染属性（点大小）
+    viewer.setPointCloudRenderingProperties(
+        pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "target_cloud");
 
-  // 2. 目标点云target --------------------------------
-  PCLHandler target_cloud_handler(cloud, 255, 100, 100);
-  viewer.addPointCloud(cloud, target_cloud_handler, "target_cloud");
-  // 设置渲染属性（点大小）
-  viewer.setPointCloudRenderingProperties(
-      pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "target_cloud");
+    // // 3. 模板点云template --------------------------------
+    PCLHandler template_cloud_handler(f_cloud, 100, 255, 255);
+    viewer.addPointCloud(f_cloud, template_cloud_handler, "template_cloud");
+    // 设置渲染属性（点大小）
+    viewer.setPointCloudRenderingProperties(
+        pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "template_cloud");
 
-  // // 3. 模板点云template --------------------------------
-  PCLHandler template_cloud_handler(f_cloud, 100, 255, 255);
-  viewer.addPointCloud(f_cloud, template_cloud_handler, "template_cloud");
-  // 设置渲染属性（点大小）
-  viewer.setPointCloudRenderingProperties(
-      pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "template_cloud");
-
-  while (
-      !viewer
-           .wasStopped()) {  // Display the visualiser until 'q' key is pressed
-    viewer.spinOnce();
-  }
+    while (
+        !viewer
+             .wasStopped()) {  // Display the visualiser until 'q' key is
+    pressed viewer.spinOnce();
+    }*/
 }
+
 Eigen::Matrix4f template_match::icp(pcl::PointCloud<PointT>::Ptr cloud_in,
                                     pcl::PointCloud<PointT>::Ptr cloud_out) {
   pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
