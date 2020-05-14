@@ -11,3 +11,18 @@ A ROS package for pointcloud filtering, segmentation(cluster extraction), coarse
 - ubuntu 16.04
 - ROS kinetic
 - pcl
+## Usage
+- First, set up a ROS workspace, and put the package in its /src folder.
+- Second, make it.
+``` shell
+catkin_make
+```
+- Third, roslaunch it
+``` shell
+roslaunch template_match template_match.launch 
+```
+- Forth, publish rostopic for it
+``` shell
+rostopic pub /arm_state bpmsg/arm_state "pick_state: 0"
+```
+- Then, you will see the visual interface, and press 'q' to quit it.
