@@ -11,7 +11,9 @@ main(int argc, char **argv) {
       nh.advertise<sensor_msgs::PointCloud2>("/camera/depth/points", 1);
   pcl::PointCloud<pcl::PointXYZ> cloud;
   sensor_msgs::PointCloud2 output;
-  pcl::io::loadPCDFile("/home/gjx/orbslam/test3.pcd", cloud);
+  pcl::io::loadPCDFile(
+      "/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/test3.pcd",
+      cloud);
   // Convert the cloud to ROS message
   pcl::toROSMsg(cloud, output);
   output.header.frame_id =
