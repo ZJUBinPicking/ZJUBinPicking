@@ -38,7 +38,7 @@ void template_match::init() {
   ros::param::get("~dz", dz);
   this->model_ = PointCloud::Ptr(new PointCloud);
   pcl::io::loadPCDFile(
-      "/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/model_1.pcd",
+      "/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/cylinder.pcd",
       *model_);
   // ros::spinOnce();
 }
@@ -252,7 +252,7 @@ void template_match::match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal) {
   viewer.addPointCloud(cloud, target_cloud_handler, "target_cloud");
   // 设置渲染属性（点大小）
   viewer.setPointCloudRenderingProperties(
-      pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "target_cloud");
+      pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "target_cloud");
 
   // // 3. 模板点云template --------------------------------
   PCLHandler template_cloud_handler(f_cloud, 100, 255, 255);
