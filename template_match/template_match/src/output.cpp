@@ -12,7 +12,7 @@ main(int argc, char **argv) {
   pcl::PointCloud<pcl::PointXYZ> cloud;
   sensor_msgs::PointCloud2 output;
   pcl::io::loadPCDFile(
-      "/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/test3.pcd",
+      "/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/test5.pcd",
       cloud);
   // Convert the cloud to ROS message
   pcl::toROSMsg(cloud, output);

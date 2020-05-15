@@ -72,7 +72,7 @@ void GraspingDemo::posCb(bpmsg::pose msg) {
       }
       obj_camera_frame.setZ(-msg.target_pos[1]);
       obj_camera_frame.setY(-msg.target_pos[0]);
-      obj_camera_frame.setX(msg.target_pos[2]);
+      obj_camera_frame.setX(0.45);
 
       obj_robot_frame = camera_to_robot_ * obj_camera_frame;
       grasp_running = true;
@@ -195,7 +195,7 @@ void GraspingDemo::attainObject() {
   target_pose1.orientation = currPose.pose.orientation;
   target_pose1.position = currPose.pose.position;
 
-  target_pose1.position.z = obj_robot_frame.getZ() - 0.02;
+  target_pose1.position.z = obj_robot_frame.getZ() - grasp_z;
   armgroup.setPoseTarget(target_pose1);
   armgroup.move();
 }
@@ -219,13 +219,13 @@ void GraspingDemo::lift() {
   target_pose1.position = currPose.pose.position;
 
   // Starting Postion after picking
-  // target_pose1.position.z = target_pose1.position.z + 0.06;
+  target_pose1.position.z = target_pose1.position.z + grasp_x;
 
-  if (rand() % 2) {
-    target_pose1.position.y = target_pose1.position.y + 0.02;
-  } else {
-    target_pose1.position.y = target_pose1.position.y - 0.02;
-  }
+  // if (rand() % 2) {
+  target_pose1.position.y = target_pose1.position.y + grasp_y;
+  // } else {
+  //   target_pose1.position.y = target_pose1.position.y - grasp_y;
+  // }
 
   armgroup.setPoseTarget(target_pose1);
   armgroup.move();
@@ -281,8 +281,14 @@ int main(int argc, char **argv) {
   if (!n.getParam("probot_grasping/pregrasp_x", pregrasp_x)) pregrasp_x = 0.20;
   if (!n.getParam("probot_grasping/pregrasp_y", pregrasp_y)) pregrasp_y = -0.17;
   if (!n.getParam("probot_grasping/pregrasp_z", pregrasp_z)) pregrasp_z = 0.28;
-
   GraspingDemo simGrasp(n, pregrasp_x, pregrasp_y, pregrasp_z, length, breadth);
+
+  if (!n.getParam("probot_grasping/pregrasp_z", pregrasp_x))
+    simGrasp.grasp_x = 0.02;
+  if (!n.getParam("probot_grasping/pregrasp_z", pregrasp_y))
+    simGrasp.grasp_y = 0.06;
+  if (!n.getParam("probot_grasping/pregrasp_z", pregrasp_z))
+    simGrasp.grasp_z = 0.03;
   ROS_INFO_STREAM("Waiting for five seconds..");
 
   ros::WallDuration(5.0).sleep();

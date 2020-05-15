@@ -228,8 +228,9 @@ class template_match {
   int object_index = 0;
   double theta, dx, dy, dz;
   int arm_state;
+  int max_num,min_num;
   Eigen::Vector3f euler_angles;
-   Eigen::Matrix<float, 4, 1> origin_pos;
+  Eigen::Matrix<float, 4, 1> origin_pos;
   Eigen::Matrix<float, 4, 1> target_pos;
   friend class TemplateAlignment;
   friend class FeatureCloud;
@@ -250,8 +251,10 @@ class template_match {
   void armCB(const bpmsg::arm_state &msg);
   void init();
   void mainloop();
-  void match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal);
-  void cluster(pcl::PointCloud<PointT>::Ptr cloud_);
+  void match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal,
+             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_2);
+  void cluster(pcl::PointCloud<PointT>::Ptr cloud_,
+               pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_2);
   void commandCB(const std_msgs::Int8 &msg);
   pcl::PointCloud<pcl::PointXYZ>::Ptr transclouds(
       pcl::PointCloud<pcl::PointXYZ>::Ptr source_cloud, double theta, double dx,

@@ -134,6 +134,9 @@ class GraspingDemo {
   ros::Publisher arm_pub;
   ros::Subscriber trans_sub;
   bpmsg::pose result_pos;
+  double grasp_z;
+  double grasp_y;
+  double grasp_x;
   std::vector<double> target_pos;
   std::vector<double> target_angle;
   int target_num = 0;
