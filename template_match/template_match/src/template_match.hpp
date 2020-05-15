@@ -228,6 +228,9 @@ class template_match {
   int object_index = 0;
   double theta, dx, dy, dz;
   int arm_state;
+  Eigen::Vector3f euler_angles;
+   Eigen::Matrix<float, 4, 1> origin_pos;
+  Eigen::Matrix<float, 4, 1> target_pos;
   friend class TemplateAlignment;
   friend class FeatureCloud;
   ros::Subscriber bat_sub;
