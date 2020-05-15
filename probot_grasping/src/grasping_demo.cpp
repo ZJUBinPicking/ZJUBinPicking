@@ -55,21 +55,41 @@ GraspingDemo::GraspingDemo(ros::NodeHandle n_, float pregrasp_x,
   attainPosition(pregrasp_x, pregrasp_y, pregrasp_z);
 
   // Subscribe to input video feed and publish object location
-  image_sub_ =
-      it_.subscribe("/camera/color/image_raw", 1, &GraspingDemo::imageCb, this);
-  trans_sub = n_.subscribe("/goal_translation", 1, &GraspingDemo::posCb, this);
+  // image_sub_ =
+  //     it_.subscribe("/camera/color/image_raw", 1, &GraspingDemo::imageCb,
+  //     this);
+  trans_sub = n_.subscribe("/goal_translation", 30, &GraspingDemo::posCb, this);
 }
 
 void GraspingDemo::posCb(bpmsg::pose msg) {
   if (!grasp_running) {
-    if (msg.if_detect == msg.DETECTSUCCESS && !msg.target_pos.empty() &&
-        !msg.target_angle.empty()) {
+    target_pos.clear();
+    cout << "pos" << endl;
+    if (msg.if_detect == msg.DETECTSUCCESS) {
       cout << "start call" << endl;
       for (int i = 0; i < 3; i++) {
-        this->target_pos.push_back(msg.target_pos[i]);
         this->target_angle.push_back(msg.target_angle[i]);
       }
+      obj_camera_frame.setZ(-msg.target_pos[1]);
+      obj_camera_frame.setY(-msg.target_pos[0]);
+      obj_camera_frame.setX(msg.target_pos[2]);
+
+      obj_robot_frame = camera_to_robot_ * obj_camera_frame;
+      grasp_running = true;
+
+      // Temporary Debugging
+      std::cout << " X-Co-ordinate in Robot Frame :" << obj_robot_frame.getX()
+                << std::endl;
+      std::cout << " Y-Co-ordinate in Robot Frame :" << obj_robot_frame.getY()
+                << std::endl;
+      std::cout << " Z-Co-ordinate in Robot Frame :" << obj_robot_frame.getZ()
+                << std::endl;
+      this->target_pos.push_back(obj_robot_frame.getX());
+      this->target_pos.push_back(obj_robot_frame.getY());
+      this->target_pos.push_back(obj_robot_frame.getZ());
+
       this->target_num = msg.object_num;
+      this->detect_state = msg.if_detect;
       cout << "end call" << endl;
 
     } else {
@@ -161,7 +181,7 @@ void GraspingDemo::attainPosition(float x, float y, float z) {
 void GraspingDemo::attainObject() {
   // ROS_INFO("The attain Object function called");
   cout << "pos" << target_pos[0] << " " << target_pos[1] << endl;
-  attainPosition(target_pos[0], target_pos[1], 0.8 - target_pos[2] + 0.04);
+  attainPosition(target_pos[0], target_pos[1], target_pos[2]);
 
   // Open Gripper
   ros::WallDuration(1.0).sleep();
@@ -233,9 +253,9 @@ void GraspingDemo::initiateGrasping() {
   ros::AsyncSpinner spinner(1);
   spinner.start();
   ros::WallDuration(3.0).sleep();
-
+  cout << "init" << endl;
   homePose = armgroup.getCurrentPose();
-  if (detect_state && !target_pos.empty() && !target_angle.empty()) {
+  if (detect_state) {
     ROS_INFO_STREAM("Approaching the Object....");
     attainObject();
 
