@@ -181,7 +181,7 @@ void GraspingDemo::attainPosition(float x, float y, float z) {
 void GraspingDemo::attainObject() {
   // ROS_INFO("The attain Object function called");
   cout << "pos" << target_pos[0] << " " << target_pos[1] << endl;
-  attainPosition(target_pos[0], target_pos[1], target_pos[2]);
+  attainPosition(target_pos[0], target_pos[1], target_pos[2] + 0.04);
 
   // Open Gripper
   ros::WallDuration(1.0).sleep();
@@ -191,11 +191,21 @@ void GraspingDemo::attainObject() {
   // Slide down the Object
   geometry_msgs::PoseStamped currPose = armgroup.getCurrentPose();
   geometry_msgs::Pose target_pose1;
+  geometry_msgs::Quaternion target_angle1;
 
-  target_pose1.orientation = currPose.pose.orientation;
+  tf2::Quaternion orientation;
+  orientation.setRPY(target_angle[0], target_angle[1], target_angle[2]);
+
+  target_pose1.orientation.x = orientation.getX();
+  target_pose1.orientation.y = orientation.getY();
+  target_pose1.orientation.z = orientation.getZ();
+  target_pose1.orientation.w = orientation.getW();
+
+  // target_pose1.Quaternion = target_angle;
   target_pose1.position = currPose.pose.position;
 
   target_pose1.position.z = obj_robot_frame.getZ() - grasp_z;
+  cout << "grasp_z" << endl;
   armgroup.setPoseTarget(target_pose1);
   armgroup.move();
 }
@@ -222,7 +232,7 @@ void GraspingDemo::lift() {
   target_pose1.position.z = target_pose1.position.z + grasp_x;
 
   // if (rand() % 2) {
-  target_pose1.position.y = target_pose1.position.y + grasp_y;
+  // target_pose1.position.y = target_pose1.position.y + grasp_y;
   // } else {
   //   target_pose1.position.y = target_pose1.position.y - grasp_y;
   // }
@@ -232,8 +242,6 @@ void GraspingDemo::lift() {
 
   // Open Gripper
   ros::WallDuration(1.0).sleep();
-  grippergroup.setNamedTarget("open");
-  grippergroup.move();
 
   target_pose1.position.z = target_pose1.position.z + 0.06;
   armgroup.setPoseTarget(target_pose1);
@@ -247,6 +255,9 @@ void GraspingDemo::goHome() {
   attainPosition(pregrasp_x, pregrasp_y, pregrasp_z);
   attainPosition(homePose.pose.position.x, homePose.pose.position.y,
                  homePose.pose.position.z);
+  ros::WallDuration(1.0).sleep();
+  grippergroup.setNamedTarget("open");
+  grippergroup.move();
 }
 
 void GraspingDemo::initiateGrasping() {
@@ -283,11 +294,11 @@ int main(int argc, char **argv) {
   if (!n.getParam("probot_grasping/pregrasp_z", pregrasp_z)) pregrasp_z = 0.28;
   GraspingDemo simGrasp(n, pregrasp_x, pregrasp_y, pregrasp_z, length, breadth);
 
-  if (!n.getParam("probot_grasping/pregrasp_z", pregrasp_x))
+  if (!n.getParam("probot_grasping/grasp_x", simGrasp.grasp_x))
     simGrasp.grasp_x = 0.02;
-  if (!n.getParam("probot_grasping/pregrasp_z", pregrasp_y))
+  if (!n.getParam("probot_grasping/grasp_y", simGrasp.grasp_x))
     simGrasp.grasp_y = 0.06;
-  if (!n.getParam("probot_grasping/pregrasp_z", pregrasp_z))
+  if (!n.getParam("probot_grasping/grasp_z", simGrasp.grasp_x))
     simGrasp.grasp_z = 0.03;
   ROS_INFO_STREAM("Waiting for five seconds..");
 

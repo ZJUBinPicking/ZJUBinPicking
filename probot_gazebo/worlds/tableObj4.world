@@ -24,7 +24,7 @@
       <pose frame=''>0.30 0 0.5165 0 0 0</pose>
       <link name='coke_can'>
         <inertial>
-          <mass>0.001</mass>
+          <mass>0.00001</mass>
           <inertia>
             <ixx>0.00016</ixx>
             <ixy>0</ixy>
@@ -97,7 +97,7 @@
       <pose frame=''>0.40 0.10 0.2165 0 0 0</pose>
       <link name='coke_can'>
         <inertial>
-          <mass>0.001</mass>
+          <mass>0.00001</mass>
           <inertia>
             <ixx>0.00016</ixx>
             <ixy>0</ixy>
@@ -170,7 +170,7 @@
       <pose frame=''>0.45 0.05 0.207525 -1.697490 1.562231 -1.697400</pose>
       <link name='coke_can'>
         <inertial>
-          <mass>0.001</mass>
+          <mass>0.00001</mass>
           <inertia>
             <ixx>0.00016</ixx>
             <ixy>0</ixy>
@@ -243,7 +243,7 @@
       <pose frame=''>0.35 0 0.207170 1.57 0 0</pose>
       <link name='coke_can'>
         <inertial>
-          <mass>0.001</mass>
+          <mass>0.00001</mass>
           <inertia>
             <ixx>0.00016</ixx>
             <ixy>0</ixy>
