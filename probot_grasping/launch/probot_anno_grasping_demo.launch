@@ -11,7 +11,10 @@
         <param name="pregrasp_z"            value="0.28"/>
          <param name="grasp_x"            value="0.02"/>
          <param name="grasp_y"            value="0.06"/>
-         <param name="grasp_z"            value="0.042"/>
+         <param name="grasp_z"            value="0.048"/>
+         <param name="change_angle"            value="0"/>
+
+         
     </node>
 
 </launch>

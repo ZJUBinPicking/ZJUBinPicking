@@ -217,8 +217,8 @@ void GraspingDemo::attainObject() {
   //   else if (target_angle[2] < 0)
   //     target_angle[2] = target_angle[2] + 3.1415926;
   // }
-  orientation.setRPY(roll, pitch, target_angle[0]);
-  ROS_WARN("angle info : %f, %f,%f", roll, pitch, target_angle[0]);
+  orientation.setRPY(1.57, 1.57, target_angle[0]);
+  ROS_WARN("angle info : %f, %f,%f", 1.57, 1.57, target_angle[0]);
   target_pose1.orientation.x = orientation.getX();
   target_pose1.orientation.y = orientation.getY();
   target_pose1.orientation.z = orientation.getZ();
@@ -326,6 +326,7 @@ int main(int argc, char **argv) {
   ros::param::get("~grasp_x", simGrasp.grasp_x);
   ros::param::get("~grasp_y", simGrasp.grasp_y);
   ros::param::get("~grasp_z", simGrasp.grasp_z);
+  ros::param::get("~change_angle", simGrasp.change_angle);
   ROS_WARN("grasp info : %f, %f,%f", simGrasp.grasp_x, simGrasp.grasp_y,
            simGrasp.grasp_z);
   ROS_INFO_STREAM("Waiting for five seconds..");

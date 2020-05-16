@@ -138,6 +138,7 @@ class GraspingDemo {
   double grasp_z;
   double grasp_y;
   double grasp_x;
+  double change_angle;
   std::vector<double> target_pos;
   std::vector<double> target_angle;
   int target_num = 0;
