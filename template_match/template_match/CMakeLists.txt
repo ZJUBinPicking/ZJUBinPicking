@@ -43,7 +43,7 @@ generate_messages(
 include_directories(
  include
   ${catkin_INCLUDE_DIRS}
-   ${template_match_SOURCE_DIR} include/
+  #  ${template_match_SOURCE_DIR} include/
    
   #  ${PCL_INCLUDE_DIRS}
 )
