@@ -1,0 +1,357 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:macro name="robotiq_gripper"  params="prefix MAC">
+    <link name="${prefix}robotiq_arg2f_base_link">
+      <inertial>
+        <origin xyz="-0.00013 0.00011 0.03284" rpy="0 0 0" />
+        <mass value="0.52954" />
+        <inertia ixx="573495E-9" ixy="-554E-9" ixz="2628E-9" iyy="681780E-9" iyz="607E-9" izz="483281E-9" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://probot_description/meshes/PROBOT_Anno/gripper/GRIPPER_base_axis.dae" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="Gazebo/Black">
+          <color rgba="0.1 0.1 0.1 1" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://probot_description/meshes/PROBOT_Anno/gripper/GRIPPER_base_axis.dae" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+    <gazebo reference="${prefix}robotiq_arg2f_base_link">
+      <material>Gazebo/Black</material>
+      <selfCollide>True</selfCollide>
+    </gazebo>
+
+    <link name="${prefix}left_outer_knuckle">
+      <inertial>
+        <origin xyz="0.01616 0 -0.00133" rpy="0 0 0" />
+        <mass value="0.0131" />
+        <inertia ixx="325.5E-9" ixy="0" ixz="197.94E-9" iyy="2306.36E-9" iyz="0" izz="2176E-9" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://probot_description/meshes/PROBOT_Anno/gripper/robotiq_140_left_outer_knuckle.dae" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="">
+          <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://probot_description/meshes/PROBOT_Anno/gripper/robotiq_140_left_outer_knuckle.dae" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+    <gazebo reference="${prefix}left_outer_knuckle">
+      <material>Gazebo/Grey</material>
+      <selfCollide>True</selfCollide>
+    </gazebo>
+
+    <link name="${prefix}right_outer_knuckle">
+      <inertial>
+        <origin xyz="-0.01616 0 -0.00133" rpy="0 0 0" />
+        <mass value="0.0131" />
+        <inertia ixx="325.5E-9" ixy="0" ixz="-197.94E-9" iyy="2306.36E-9" iyz="0" izz="2176E-9" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://probot_description/meshes/PROBOT_Anno/gripper/robotiq_140_right_outer_knuckle.dae" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="">
+          <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://probot_description/meshes/PROBOT_Anno/gripper/robotiq_140_right_outer_knuckle.dae" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+    <gazebo reference="${prefix}right_outer_knuckle">
+      <material>Gazebo/Grey</material>
+      <selfCollide>True</selfCollide>
+    </gazebo>
+
+    <link name="${prefix}left_inner_knuckle">
+      <inertial>
+        <origin xyz="0.03332 0 0.0379" rpy="0 0 0" />
+        <mass value="0.04476" />
+        <inertia ixx="28054E-9" ixy="0" ixz="-19174E-9" iyy="39758E-9" iyz="0" izz="23453E-9" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://probot_description/meshes/PROBOT_Anno/gripper/robotiq_140_left_inner_knuckle.dae" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="Gazebo/Black">
+          <color rgba="0.1 0.1 0.1 1" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://probot_description/meshes/PROBOT_Anno/gripper/robotiq_140_left_inner_knuckle.dae" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+    <gazebo reference="${prefix}left_inner_knuckle">
+      <material>Gazebo/Black</material>
+      <selfCollide>False</selfCollide>
+    </gazebo>
+
+    <link name="${prefix}right_inner_knuckle">
+      <inertial>
+        <origin xyz="-0.03332 0 0.0379" rpy="0 0 0" />
+        <mass value="0.04476" />
+        <inertia ixx="28054E-9" ixy="0" ixz="19174E-9" iyy="39758E-9" iyz="0" izz="23453E-9" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://probot_description/meshes/PROBOT_Anno/gripper/robotiq_140_right_inner_knuckle.dae" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="Gazebo/Black">
+          <color rgba="0.1 0.1 0.1 1" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://probot_description/meshes/PROBOT_Anno/gripper/robotiq_140_right_inner_knuckle.dae" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+    <gazebo reference="${prefix}right_inner_knuckle">
+      <material>Gazebo/Black</material>
+      <selfCollide>False</selfCollide>
+    </gazebo>
+
+    <link name="${prefix}left_inner_finger">
+      <inertial>
+        <origin xyz="-0.01563 0 0.02522" rpy="0 0 0" />
+        <mass value="0.045" />
+        <inertia ixx="26663E-9" ixy="0" ixz="5579E-9" iyy="28009E-9" iyz="0" izz="4368E-9" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://probot_description/meshes/PROBOT_Anno/gripper/robotiq_140_left_inner_finger.dae" scale="0.001 0.001 0.001" />
+        </geometry>
+        <material name="Gazebo/Black">
+          <color rgba="0.1 0.1 0.1 1" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://probot_description/meshes/PROBOT_Anno/gripper/robotiq_140_left_inner_finger.dae" scale="0.001 0.001 0.001" />
+        </geometry>
+      </collision>
+    </link>
+    <gazebo reference="${prefix}left_inner_finger">
+      <material>Gazebo/Black</material>
+      <selfCollide>False</selfCollide>
+    </gazebo>
+
+    <link name="${prefix}right_inner_finger">
+      <inertial>
+        <origin xyz="0.01563 0 0.02522" rpy="0 0 0" />
+        <mass value="0.045" />
+        <inertia ixx="26663E-9" ixy="0" ixz="-5579E-9" iyy="28009E-9" iyz="0" izz="4368E-9" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://probot_description/meshes/PROBOT_Anno/gripper/robotiq_140_right_inner_finger.dae" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="Gazebo/Black">
+          <color rgba="0.1 0.1 0.1 1" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://probot_description/meshes/PROBOT_Anno/gripper/robotiq_140_right_inner_finger.dae" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+    <gazebo reference="${prefix}right_inner_finger">
+      <material>Gazebo/Black</material>
+      <selfCollide>False</selfCollide>
+    </gazebo>
+
+    <link name="${prefix}left_outer_finger">
+      <inertial>
+        <origin xyz="0.01482 0 0.03451" rpy="0 0 0" />
+        <mass value="0.07637" />
+        <inertia ixx="45513E-9" ixy="0" ixz="-20691E-9" iyy="52570E-9" iyz="0" izz="17804E-9" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://probot_description/meshes/PROBOT_Anno/gripper/robotiq_140_left_outer_finger.dae" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="Gazebo/Black">
+          <color rgba="0.1 0.1 0.1 1" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://probot_description/meshes/PROBOT_Anno/gripper/robotiq_140_left_outer_finger.dae" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+    <gazebo reference="${prefix}left_outer_finger">
+      <material>Gazebo/Black</material>
+      <selfCollide>True</selfCollide>
+    </gazebo>
+
+    <link name="${prefix}right_outer_finger">
+      <inertial>
+        <origin xyz="-0.01482 0 0.03451" rpy="0 0 0" />
+        <mass value="0.07637" />
+        <inertia ixx="45513E-9" ixy="0" ixz="20691E-9" iyy="52570E-9" iyz="0" izz="17804E-9" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://probot_description/meshes/PROBOT_Anno/gripper/robotiq_140_right_outer_finger.dae" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="Gazebo/Black">
+          <color rgba="0.1 0.1 0.1 1" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://probot_description/meshes/PROBOT_Anno/gripper/robotiq_140_right_outer_finger.dae" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+    <gazebo reference="${prefix}right_outer_finger">
+      <material>Gazebo/Black</material>
+      <selfCollide>True</selfCollide>
+    </gazebo>
+
+    <joint name="robotiq_arg2f_base_to_${prefix}left_outer_knuckle" type="revolute">
+      <origin xyz="0.0306 0 0.05466" rpy="0 0 0" />
+      <parent link="${prefix}robotiq_arg2f_base_link" />
+      <child link="${prefix}left_outer_knuckle" />
+      <axis xyz="0 -1 0" />
+      <limit lower="0" upper="0.78574722925"  velocity="2.0" effort="18.65" />
+      <mimic joint="${prefix}joint_finger" multiplier="1" offset="0"/>
+    </joint>
+
+    <joint name="${prefix}joint_finger" type="revolute">
+      <origin xyz="-0.0306 0 0.05466" rpy="0 0 0" />
+      <parent link="${prefix}robotiq_arg2f_base_link" />
+      <child link="${prefix}right_outer_knuckle" />
+      <axis xyz="0 1 0" />
+      <limit lower="0" upper="0.78574722925" velocity="3.54" effort="18.65" />
+    </joint>
+
+    <joint name="robotiq_arg2f_base_to_${prefix}left_inner_knuckle" type="revolute">
+      <origin xyz="0.0127 0 0.06118" rpy="0 0 0" />
+      <parent link="${prefix}robotiq_arg2f_base_link" />
+      <child link="${prefix}left_inner_knuckle" />
+      <axis xyz="0 -1 0" />
+      <limit lower="0" upper="0.78574722925" velocity="3.54" effort="18.65" />
+      <mimic joint="${prefix}joint_finger" multiplier="1" offset="0"/>
+    </joint>
+
+    <joint name="robotiq_arg2f_base_to_${prefix}right_inner_knuckle" type="revolute">
+      <origin xyz="-0.0127 0 0.06118" rpy="0 0 0" />
+      <parent link="${prefix}robotiq_arg2f_base_link" />
+      <child link="${prefix}right_inner_knuckle" />
+      <axis xyz="0 1 0" />
+      <limit lower="0" upper="0.78574722925" velocity="3.54" effort="18.65" />
+      <mimic joint="${prefix}joint_finger" multiplier="1" offset="0"/>
+    </joint>
+
+    <joint name="${prefix}left_outer_knuckle_to_finger" type="fixed">
+      <origin xyz="0.03142 0 -0.00453" rpy="0 0 0" />
+      <parent link="${prefix}left_outer_knuckle" />
+      <child link="${prefix}left_outer_finger" />
+    </joint>
+
+    <joint name="${prefix}right_outer_knuckle_to_finger" type="fixed">
+      <origin xyz="-0.03142 0 -0.00453" rpy="0 0 0" />
+      <parent link="${prefix}right_outer_knuckle" />
+      <child link="${prefix}right_outer_finger" />
+    </joint>
+
+    <joint name="${prefix}left_outer_finger_to_inner" type="revolute">
+      <origin xyz="0.03543 0 0.0789" rpy="0 0 0" />
+      <parent link="${prefix}left_outer_finger" />
+      <child link="${prefix}left_inner_finger" />
+      <axis xyz="0 1 0" />
+      <limit lower="0" upper="0.78574722925" velocity="3.54" effort="18.65" />
+      <mimic joint="${prefix}joint_finger" multiplier="1" offset="0"/>
+    </joint>
+
+    <joint name="${prefix}right_outer_finger_to_inner" type="revolute">
+      <origin xyz="-0.03543 0 0.0789" rpy="0 0 0" />
+      <parent link="${prefix}right_outer_finger" />
+      <child link="${prefix}right_inner_finger" />
+      <axis xyz="0 -1 0" />
+      <limit lower="0" upper="0.78574722925" velocity="3.54" effort="18.65" />
+      <mimic joint="${prefix}joint_finger" multiplier="1" offset="0"/>
+    </joint>
+
+    <gazebo>
+      <joint name="${prefix}left_inner_knuckle_to_finger" type="revolute">
+        <pose frame="">-0.0179 0 0.00652 0 0 0</pose>
+        <parent>${prefix}left_inner_knuckle</parent>
+        <child>${prefix}left_inner_finger</child>
+        <axis>
+          <xyz>0 1 0</xyz>
+          <limit>
+            <lower>0</lower>
+            <upper>0.78574722925</upper>
+            <velocity>3.54</velocity>
+            <effort>18.65</effort>
+          </limit>
+        </axis>
+      </joint>
+
+      <joint name="${prefix}right_inner_knuckle_to_finger" type="revolute">
+        <pose frame="">0.0179 0 0.00652 0 0 0</pose>
+        <parent>${prefix}right_inner_knuckle</parent>
+        <child>${prefix}right_inner_finger</child>
+        <axis>
+          <xyz>0 -1 0</xyz>
+          <limit>
+            <lower>0</lower>
+            <upper>0.78574722925</upper>
+            <velocity>3.54</velocity>
+            <effort>18.65</effort>
+          </limit>
+        </axis>
+      </joint>
+
+      <plugin filename="librobotiq_gripper_gazebo_plugin.so" name="hrim_actuator_gripper${MAC}">
+        <kp>600</kp>
+        <ki>0.1</ki>
+        <kd>0.01</kd>
+        <min_velocity>30</min_velocity>
+        <max_velocity>250</max_velocity>
+        <radius>156</radius>
+        <joint>robotiq_arg2f_base_to_${prefix}left_inner_knuckle</joint>
+        <joint>robotiq_arg2f_base_to_${prefix}left_outer_knuckle</joint>
+        <joint>robotiq_arg2f_base_to_${prefix}right_inner_knuckle</joint>
+        <joint>${prefix}joint_finger</joint>
+      </plugin>
+    </gazebo>
+  </xacro:macro>
+</robot>

@@ -34,7 +34,7 @@ planner_configs:
   RRTstar:
     type: geometric::RRTstar
     range: 0.0  # Max motion added to tree. ==> maxDistance_ default: 0.0, if 0.0, set on setup()
-    goal_bias: 0.05  # When close to goal select goal, with this probability? default: 0.05
+    goal_bias: 0.1  # When close to goal select goal, with this probability? default: 0.05
     delay_collision_checking: 1  # Stop collision checking as soon as C-free parent found. default 1
   TRRT:
     type: geometric::TRRT
@@ -121,7 +121,7 @@ planner_configs:
     dense_delta_fraction: 0.001  # delta fraction for interface detection. default: 0.001
     max_failures: 5000  # maximum consecutive failure limit. default: 5000
 manipulator:
-  default_planner_config: RRT
+  default_planner_config: RRTstar
   planner_configs:
     - SBL
     - EST

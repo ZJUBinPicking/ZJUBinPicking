@@ -44,6 +44,26 @@
         <geometry>
           <box size="0.025 0.0485 0.0375"/>
         </geometry>
+         <surface>
+            <friction>
+              <ode>
+                <mu>1000000000000</mu>
+                <mu2>1000000000000</mu2>
+              </ode>
+              <torsional>
+                <ode/>
+              </torsional>
+            </friction>
+            <contact>
+              <ode>
+                <kp>1e+07</kp>
+                <kd>1</kd>
+                <min_depth>0.001</min_depth>
+                <max_vel>0.1</max_vel>
+              </ode>
+            </contact>
+            <bounce/>
+          </surface>
       </collision>
     </link>
     
