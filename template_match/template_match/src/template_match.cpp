@@ -51,7 +51,9 @@ void template_match::init() {
       "/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/cylinder.pcd",
       *model_);
   origin_pos << 0.1, 0.1, 0.1, 1;
+  origin_angle << 0, 0, 1;
   cout << origin_pos << endl;
+  cout << origin_angle << endl;
   // ros::spinOnce();
 }
 
@@ -116,7 +118,7 @@ void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
 
   // if arm is waiting for picking or fail in picking, the program will continue
   // detecting
-  if (arm_state == 0 || arm_state == 2) {
+  if (arm_state == 0 || arm_state == 2 && cloud_filtered->points.size()) {
     trans_pub.publish(result_pose);
     cluster(cloud_filtered, mycloud);
     // match(cloud_filtered, mycloud);
@@ -179,7 +181,7 @@ void template_match::cluster(pcl::PointCloud<PointT>::Ptr cloud_,
     }
     for (int i = 0; i < 3; i++) {
       result_pose.target_pos[i] = this->target_pos(i, 0);
-      result_pose.target_angle[2 - i] = this->euler_angles.transpose()(0, i);
+      // result_pose.target_angle[2 - i] = this->euler_angles.transpose()(0, i);
     }
     result_pose.object_num = goals.size();
     if (goals.size())
@@ -250,10 +252,19 @@ void template_match::match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal,
 
     target_pos = final_trans.back() * origin_pos;
     cout << "target" << target_pos << endl;
-    euler_angles = rotation.eulerAngles(2, 1, 0);
-    cout << "yaw(Z) pitch(Y) roll(X)=\n"
-         << euler_angles.transpose() << endl
+    target_vector = rotation * origin_angle;
+    result_pose.target_angle[0] = atan(target_vector(1) / target_vector(0));
+    result_pose.target_angle[1] = atan(target_vector(0) / target_vector(1));
+    result_pose.target_angle[2] =
+        atan(sqrt(pow(target_vector(0), 2) + pow(target_vector(1), 2)) /
+             target_vector(2));
+    cout << "angle2x angle2y angle2z" << result_pose.target_angle[0] << " "
+         << result_pose.target_angle[1] << " " << result_pose.target_angle[2]
          << endl;
+    // euler_angles = rotation.eulerAngles(2, 1, 0);
+    // cout << "yaw(Z) pitch(Y) roll(X)=\n"
+    //      << euler_angles.transpose() << endl
+    //      << endl;
 
     for (int i = 0; i < 4; i++) {
       for (int j = 0; j < 4; j++) {
@@ -262,7 +273,7 @@ void template_match::match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal,
     }
     for (int i = 0; i < 3; i++) {
       result_pose.target_pos[i] = this->target_pos(i, 0);
-      result_pose.target_angle[2 - i] = this->euler_angles.transpose()(0, i);
+      // result_pose.target_angle[2 - i] = this->euler_angles.transpose()(0, i);
     }
     result_pose.object_num = goals.size();
     if (goals.size())

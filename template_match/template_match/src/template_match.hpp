@@ -29,6 +29,7 @@
 typedef pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
     PCLHandler;
 
+#include <math.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/registration/icp.h>
@@ -228,9 +229,12 @@ class template_match {
   int object_index = 0;
   double theta, dx, dy, dz;
   int arm_state;
-  int max_num,min_num;
+  int max_num, min_num;
   Eigen::Vector3f euler_angles;
   Eigen::Matrix<float, 4, 1> origin_pos;
+  Eigen::Matrix<float, 3, 1> origin_angle;
+  Eigen::Matrix<float, 3, 1> target_angle;
+  Eigen::Matrix<float, 3, 1> target_vector;
   Eigen::Matrix<float, 4, 1> target_pos;
   friend class TemplateAlignment;
   friend class FeatureCloud;

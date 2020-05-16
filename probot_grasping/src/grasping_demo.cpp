@@ -209,16 +209,16 @@ void GraspingDemo::attainObject() {
   double roll, pitch, yaw;                       //定义存储r\p\y的容器
   tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);  //进行转换
   tf2::Quaternion orientation;
-  target_angle[2] = target_angle[2];
-  if (abs(target_angle[2]) > 1.57) {
-    ROS_WARN("big!!!!! ");
-    if (target_angle[2] > 0)
-      target_angle[2] = target_angle[2] - 3.1415926;
-    else if (target_angle[2] < 0)
-      target_angle[2] = target_angle[2] + 3.1415926;
-  }
-  orientation.setRPY(roll, pitch, target_angle[2]);
-  ROS_WARN("angle info : %f, %f,%f", roll, pitch, target_angle[2]);
+  // target_angle[2] = target_angle[2];
+  // if (abs(target_angle[2]) > 1.57) {
+  //   ROS_WARN("big!!!!! ");
+  //   if (target_angle[2] > 0)
+  //     target_angle[2] = target_angle[2] - 3.1415926;
+  //   else if (target_angle[2] < 0)
+  //     target_angle[2] = target_angle[2] + 3.1415926;
+  // }
+  orientation.setRPY(roll, pitch, target_angle[0]);
+  ROS_WARN("angle info : %f, %f,%f", roll, pitch, target_angle[0]);
   target_pose1.orientation.x = orientation.getX();
   target_pose1.orientation.y = orientation.getY();
   target_pose1.orientation.z = orientation.getZ();
