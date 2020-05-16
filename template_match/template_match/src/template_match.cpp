@@ -50,7 +50,7 @@ void template_match::init() {
   pcl::io::loadPCDFile(
       "/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/cylinder.pcd",
       *model_);
-  origin_pos << 0.1, 0.1, 0.1, 1;
+  origin_pos << 0.1, 0.1, 0.12, 1;
   origin_angle << 0, 0, 1;
   cout << origin_pos << endl;
   cout << origin_angle << endl;

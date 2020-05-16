@@ -217,8 +217,8 @@ void GraspingDemo::attainObject() {
   //   else if (target_angle[2] < 0)
   //     target_angle[2] = target_angle[2] + 3.1415926;
   // }
-  orientation.setRPY(1.57, 1.57, target_angle[0]);
-  ROS_WARN("angle info : %f, %f,%f", 1.57, 1.57, target_angle[0]);
+  orientation.setRPY(1.57, 1.57, -target_angle[0]);
+  ROS_WARN("angle info : %f, %f,%f", 1.57, 1.57, -target_angle[0]);
   target_pose1.orientation.x = orientation.getX();
   target_pose1.orientation.y = orientation.getY();
   target_pose1.orientation.z = orientation.getZ();
@@ -255,7 +255,7 @@ void GraspingDemo::lift() {
   target_pose1.position.z = target_pose1.position.z + grasp_x;
 
   // if (rand() % 2) {
-  // target_pose1.position.y = target_pose1.position.y + grasp_y;
+  target_pose1.position.y = target_pose1.position.y + grasp_y;
   // } else {
   //   target_pose1.position.y = target_pose1.position.y - grasp_y;
   // }
@@ -265,7 +265,8 @@ void GraspingDemo::lift() {
 
   // Open Gripper
   ros::WallDuration(1.0).sleep();
-
+  grippergroup.setNamedTarget("open");
+  grippergroup.move();
   target_pose1.position.z = target_pose1.position.z + 0.06;
   armgroup.setPoseTarget(target_pose1);
   armgroup.move();
@@ -278,9 +279,7 @@ void GraspingDemo::goHome() {
   attainPosition(pregrasp_x, pregrasp_y, pregrasp_z);
   attainPosition(homePose.pose.position.x, homePose.pose.position.y,
                  homePose.pose.position.z);
-  ros::WallDuration(1.0).sleep();
-  grippergroup.setNamedTarget("open");
-  grippergroup.move();
+  // ros::WallDuration(1.0).sleep();
 }
 
 void GraspingDemo::initiateGrasping() {
@@ -299,8 +298,8 @@ void GraspingDemo::initiateGrasping() {
     ROS_INFO_STREAM("Lifting the Object....");
     lift();
 
-    ROS_INFO_STREAM("Going back to home position....");
-    goHome();
+    // ROS_INFO_STREAM("Going back to home position....");
+    // goHome();
   }
   grasp_running = false;
 }

@@ -24,7 +24,7 @@
       <pose frame=''>0.30 0.0 0.2165 0 0 0</pose>
       <link name='coke_can'>
         <inertial>
-          <mass>0.001</mass>
+          <mass>1e-07</mass>
           <inertia>
             <ixx>0.00016</ixx>
             <ixy>0</ixy>
@@ -46,7 +46,7 @@
                 </box-->
                 <mesh>
                     <uri>model://coke_can/meshes/coke_can.dae</uri>
-                    <scale>0.2 0.15 0.18</scale>
+                    <scale>0.24 0.24 0.45</scale>
                 </mesh>
             </geometry>
           <max_contacts>10</max_contacts>
@@ -78,7 +78,7 @@
                 </box-->
                 <mesh>
                     <uri>model://coke_can/meshes/coke_can.dae</uri>
-                    <scale>0.2 0.15 0.18</scale>
+                    <scale>0.24 0.24 0.45</scale>
                 </mesh>
             </geometry>
           <material>
