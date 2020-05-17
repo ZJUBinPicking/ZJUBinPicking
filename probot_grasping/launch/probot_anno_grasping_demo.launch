@@ -9,7 +9,7 @@
         <param name="pregrasp_x"            value="0.20"/>
         <param name="pregrasp_y"            value="-0.17"/>
         <param name="pregrasp_z"            value="0.28"/>
-         <param name="grasp_x"            value="0.02"/>
+         <param name="grasp_x"            value="0.10"/>
          <param name="grasp_y"            value="0.06"/>
          <param name="grasp_z"            value="0.054"/>
          <param name="change_angle"            value="0"/>

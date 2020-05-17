@@ -64,7 +64,8 @@ GraspingDemo::GraspingDemo(ros::NodeHandle n_, float pregrasp_x,
   // //设置位置(单位：米)和姿态（单位：弧度）的允许误差
   // armgroup.setGoalPositionTolerance(0.001);
   // armgroup.setGoalOrientationTolerance(0.01);
-
+  armgroup.setMaxAccelerationScalingFactor(0.2);
+  armgroup.setMaxVelocityScalingFactor(0.8);
   // //设置允许的最大速度和加速度
   // armgroup.setMaxAccelerationScalingFactor(0.2);
   // armgroup.setMaxVelocityScalingFactor(0.2);
@@ -194,7 +195,7 @@ void GraspingDemo::attainObject() {
   attainPosition(target_pos[0], target_pos[1], target_pos[2] + grasp_y);
 
   // Open Gripper
-  ros::WallDuration(1.0).sleep();
+  ros::WallDuration(0.5).sleep();
   grippergroup.setNamedTarget("open");
   grippergroup.move();
 
@@ -236,7 +237,7 @@ void GraspingDemo::attainObject() {
 void GraspingDemo::grasp() {
   // ROS_INFO("The Grasping function called");
 
-  ros::WallDuration(1.0).sleep();
+  ros::WallDuration(0.5).sleep();
   grippergroup.setNamedTarget("close");
   grippergroup.move();
 }
@@ -255,7 +256,7 @@ void GraspingDemo::lift() {
   target_pose1.position.z = target_pose1.position.z + grasp_x;
 
   // if (rand() % 2) {
-  target_pose1.position.y = target_pose1.position.y + grasp_y;
+  // target_pose1.position.y = target_pose1.position.y + grasp_y;
   // } else {
   //   target_pose1.position.y = target_pose1.position.y - grasp_y;
   // }
@@ -264,12 +265,12 @@ void GraspingDemo::lift() {
   armgroup.move();
 
   // Open Gripper
-  ros::WallDuration(1.0).sleep();
+  ros::WallDuration(0.5).sleep();
   grippergroup.setNamedTarget("open");
   grippergroup.move();
-  target_pose1.position.z = target_pose1.position.z + 0.06;
-  armgroup.setPoseTarget(target_pose1);
-  armgroup.move();
+  // target_pose1.position.z = target_pose1.position.z + 0.06;
+  // armgroup.setPoseTarget(target_pose1);
+  // armgroup.move();
 }
 
 void GraspingDemo::goHome() {
@@ -285,7 +286,7 @@ void GraspingDemo::goHome() {
 void GraspingDemo::initiateGrasping() {
   ros::AsyncSpinner spinner(1);
   spinner.start();
-  ros::WallDuration(2.0).sleep();
+  ros::WallDuration(0.5).sleep();
   cout << "init" << endl;
   homePose = armgroup.getCurrentPose();
   if (detect_state) {
@@ -294,10 +295,12 @@ void GraspingDemo::initiateGrasping() {
 
     ROS_INFO_STREAM("Attempting to Grasp the Object now..");
     grasp();
-
+    armgroup.setMaxAccelerationScalingFactor(0.02);
+    armgroup.setMaxVelocityScalingFactor(0.1);
     ROS_INFO_STREAM("Lifting the Object....");
     lift();
-
+    armgroup.setMaxAccelerationScalingFactor(0.2);
+    armgroup.setMaxVelocityScalingFactor(0.8);
     // ROS_INFO_STREAM("Going back to home position....");
     // goHome();
   }
@@ -330,7 +333,7 @@ int main(int argc, char **argv) {
            simGrasp.grasp_z);
   ROS_INFO_STREAM("Waiting for five seconds..");
 
-  ros::WallDuration(5.0).sleep();
+  // ros::WallDuration(5.0).sleep();
   while (ros::ok()) {
     // Process image callback
     ros::spinOnce();
