@@ -1,12 +1,9 @@
 /***********************************************************************
 Copyright 2019 Wuhan PS-Micro Technology Co., Itd.
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
     http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -174,10 +171,8 @@ void GraspingDemo::attainPosition(float x, float y, float z) {
 
   /*ROS_INFO_NAMED("tutorial", "Visualizing plan 1 (pose goal) %s", success ? ""
   : "FAILED");
-
    const robot_state::JointModelGroup *joint_model_group =
   armgroup.getCurrentState()->getJointModelGroup("arm");
-
   ROS_INFO_NAMED("tutorial", "Visualizing plan 1 as trajectory line");
   visual_tools.publishAxisLabeled(target_pose1, "pose1");
   // visual_tools.publishText(text_pose, "Pose Goal", rvt::WHITE, rvt::XLARGE);
@@ -209,16 +204,16 @@ void GraspingDemo::attainObject() {
   double roll, pitch, yaw;                       //定义存储r\p\y的容器
   tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);  //进行转换
   tf2::Quaternion orientation;
-  target_angle[2] = target_angle[2];
-  if (abs(target_angle[2]) > 1.57) {
-    ROS_WARN("big!!!!! ");
-    if (target_angle[2] > 0)
-      target_angle[2] = target_angle[2] - 3.1415926;
-    else if (target_angle[2] < 0)
-      target_angle[2] = target_angle[2] + 3.1415926;
-  }
-  orientation.setRPY(roll, pitch, target_angle[2]);
-  ROS_WARN("angle info : %f, %f,%f", roll, pitch, target_angle[2]);
+  // target_angle[2] = target_angle[2];
+  // if (abs(target_angle[2]) > 1.57) {
+  //   ROS_WARN("big!!!!! ");
+  //   if (target_angle[2] > 0)
+  //     target_angle[2] = target_angle[2] - 3.1415926;
+  //   else if (target_angle[2] < 0)
+  //     target_angle[2] = target_angle[2] + 3.1415926;
+  // }
+  orientation.setRPY(1.57, 1.57, -target_angle[0]);
+  ROS_WARN("angle info : %f, %f,%f", 1.57, 1.57, -target_angle[0]);
   target_pose1.orientation.x = orientation.getX();
   target_pose1.orientation.y = orientation.getY();
   target_pose1.orientation.z = orientation.getZ();
@@ -255,7 +250,7 @@ void GraspingDemo::lift() {
   target_pose1.position.z = target_pose1.position.z + grasp_x;
 
   // if (rand() % 2) {
-  // target_pose1.position.y = target_pose1.position.y + grasp_y;
+  target_pose1.position.y = target_pose1.position.y + grasp_y;
   // } else {
   //   target_pose1.position.y = target_pose1.position.y - grasp_y;
   // }
@@ -265,7 +260,8 @@ void GraspingDemo::lift() {
 
   // Open Gripper
   ros::WallDuration(1.0).sleep();
-
+  grippergroup.setNamedTarget("open");
+  grippergroup.move();
   target_pose1.position.z = target_pose1.position.z + 0.06;
   armgroup.setPoseTarget(target_pose1);
   armgroup.move();
@@ -278,9 +274,7 @@ void GraspingDemo::goHome() {
   attainPosition(pregrasp_x, pregrasp_y, pregrasp_z);
   attainPosition(homePose.pose.position.x, homePose.pose.position.y,
                  homePose.pose.position.z);
-  ros::WallDuration(1.0).sleep();
-  grippergroup.setNamedTarget("open");
-  grippergroup.move();
+  // ros::WallDuration(1.0).sleep();
 }
 
 void GraspingDemo::initiateGrasping() {
@@ -299,8 +293,8 @@ void GraspingDemo::initiateGrasping() {
     ROS_INFO_STREAM("Lifting the Object....");
     lift();
 
-    ROS_INFO_STREAM("Going back to home position....");
-    goHome();
+    // ROS_INFO_STREAM("Going back to home position....");
+    // goHome();
   }
   grasp_running = false;
 }
@@ -326,6 +320,7 @@ int main(int argc, char **argv) {
   ros::param::get("~grasp_x", simGrasp.grasp_x);
   ros::param::get("~grasp_y", simGrasp.grasp_y);
   ros::param::get("~grasp_z", simGrasp.grasp_z);
+  ros::param::get("~change_angle", simGrasp.change_angle);
   ROS_WARN("grasp info : %f, %f,%f", simGrasp.grasp_x, simGrasp.grasp_y,
            simGrasp.grasp_z);
   ROS_INFO_STREAM("Waiting for five seconds..");

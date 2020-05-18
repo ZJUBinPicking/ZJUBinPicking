@@ -12,7 +12,7 @@
 	<param name="dy"  type="double" value="0"/>
 	<param name="dz"  type="double" value="-180"/>
 	<param name="max_num"  type="int" value="20000"/>
-	<param name="min_num"  type="int" value="59"/>
+	<param name="min_num"  type="int" value="45"/>
 	</node>
 	<!-- <node pkg="template_match" type="output_clouds" name="output_clouds" output="screen">
 	</node> -->

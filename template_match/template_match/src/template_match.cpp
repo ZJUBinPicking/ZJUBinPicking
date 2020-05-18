@@ -48,7 +48,7 @@ void template_match::init() {
   ros::param::get("~min_num", min_num);
   this->model_ = PointCloud::Ptr(new PointCloud);
   pcl::io::loadPCDFile(
-      "/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/cylinder.pcd",
+      "/home/mkjia/probot_anno_ws/src/probot_anno/template_match/src/cylinder.pcd",
       *model_);
   origin_pos << 0.1, 0.1, 0.1, 1;
   cout << origin_pos << endl;

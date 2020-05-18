@@ -47,8 +47,8 @@
          <surface>
             <friction>
               <ode>
-                <mu>1000000000000</mu>
-                <mu2>1000000000000</mu2>
+                <mu>1e+07</mu>
+                <mu2>1e+07</mu2>
               </ode>
               <torsional>
                 <ode/>
