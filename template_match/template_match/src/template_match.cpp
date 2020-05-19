@@ -1,5 +1,8 @@
 #include "template_match.hpp"
 int user_data;
+bool cmp(const pair<int, double> &a, const pair<int, double> &b) {
+  return a.second < b.second;
+}
 void viewerOneOff(pcl::visualization::PCLVisualizer &viewer, double x, double y,
                   double z) {
   // viewer.setBackgroundColor(1.0, 0.5, 1.0);
@@ -46,6 +49,7 @@ void template_match::init() {
   ros::param::get("~dz", dz);
   ros::param::get("~max_num", max_num);
   ros::param::get("~min_num", min_num);
+  ros::param::get("~view_on", view_on);
   this->model_ = PointCloud::Ptr(new PointCloud);
   pcl::io::loadPCDFile(
       "/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/cylinder.pcd",
@@ -80,6 +84,7 @@ void template_match::showCloud(pcl::PointCloud<PointT>::Ptr cloud1,
 }
 void template_match::armCB(const bpmsg::arm_state &msg) {
   this->arm_state = msg.pick_state;
+  this->pick_index = msg.pick_index;
 }
 
 void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
@@ -91,7 +96,7 @@ void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
   pcl::PointCloud<PointT>::Ptr mycloud(cloudptr);
   pcl::console::TicToc tt;
 
-  std::cout << "ReadImage...\n", tt.tic();
+  // std::cout << "ReadImage...\n", tt.tic();
 
   pcl::PointCloud<PointT>::Ptr cloud_filtered(new pcl::PointCloud<PointT>);
   pcl::CropBox<PointT> crop;
@@ -109,27 +114,31 @@ void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
   pass.setFilterLimits(min_z, max_z);   //设置在过滤字段的范围
   pass.setFilterLimitsNegative(false);  //保留还是过滤掉范围内的点
   pass.filter(*cloud_filtered);
-  std::cout << "The points data:  " << cloud_filtered->points.size()
-            << std::endl;
   showCloud(cloud_filtered, mycloud);
+
   // mycloud = cloud_filtered;
   // cluster(mycloud);
   // trans_pub.publish(result_pose);
 
   // if arm is waiting for picking or fail in picking, the program will continue
   // detecting
-  if (arm_state == 0 || arm_state == 2 && cloud_filtered->points.size()) {
+  if ((arm_state == 0 || arm_state == 2) && cloud_filtered->points.size() &&
+      !com_flag) {
+    std::cout << "The points data:  " << cloud_filtered->points.size()
+              << std::endl;
+    showCloud(cloud_filtered, mycloud);
+
     trans_pub.publish(result_pose);
     cluster(cloud_filtered, mycloud);
     // match(cloud_filtered, mycloud);
   }
   // if arm has already picked the object, the program will stop detect, and
   // restart for next detection
-  else if (arm_state == 1) {
-    result_pose.if_detect = 0;
-    result_pose.object_num = 0;
-    trans_pub.publish(result_pose);
-  }
+  // else if (arm_state == 1 && com_flag) {
+  //   result_pose.if_detect = 0;
+  //   result_pose.object_num = 0;
+  //   trans_pub.publish(result_pose);
+  // }
 }
 
 void template_match::cluster(pcl::PointCloud<PointT>::Ptr cloud_,
@@ -170,30 +179,36 @@ void template_match::cluster(pcl::PointCloud<PointT>::Ptr cloud_,
 
       ss << "cloud_cluster_" << j;
       goals.push_back(cloud_cluster);
+      match(cloud_cluster, cloud_2, j);
+      height_map.insert(make_pair(j, target_pos[j](2)));
       j++;
-      match(cloud_cluster, cloud_2);
     }
     cout << goals.size() << endl;
-    for (int i = 0; i < 4; i++) {
-      for (int j = 0; j < 4; j++) {
-        result_pose.translation[i * 4 + j] = final_trans.back()(i, j);
-      }
-    }
-    for (int i = 0; i < 3; i++) {
-      result_pose.target_pos[i] = this->target_pos(i, 0);
-      // result_pose.target_angle[2 - i] = this->euler_angles.transpose()(0, i);
-    }
-    result_pose.object_num = goals.size();
-    if (goals.size())
-      result_pose.if_detect = result_pose.DETECTSUCCESS;
-    else
-      result_pose.if_detect = result_pose.NOTHING;
-    trans_pub.publish(result_pose);
+    object_num = goals.size();
+    com_flag = 1;
+    /*
+     for (int i = 0; i < 4; i++) {
+       for (int j = 0; j < 4; j++) {
+         result_pose.translation[i * 4 + j] = final_trans.back()(i, j);
+       }
+     }
+     for (int i = 0; i < 3; i++) {
+       result_pose.target_pos[i] = this->target_pos(i, 0);
+       // result_pose.target_angle[2 - i] = this->euler_angles.transpose()(0,
+     i);
+     }
+     result_pose.object_num = goals.size();
+     if (goals.size())
+       result_pose.if_detect = result_pose.DETECTSUCCESS;
+     else
+       result_pose.if_detect = result_pose.NOTHING;
+     trans_pub.publish(result_pose);*/
   }
 }
 
 void template_match::match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal,
-                           pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_2) {
+                           pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_2,
+                           int index) {
   if (arm_state == 0 || arm_state == 2) {
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(
         new pcl::PointCloud<pcl::PointXYZ>);
@@ -249,90 +264,122 @@ void template_match::match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal,
     printf("\n");
     printf("t = < %0.3f, %0.3f, %0.3f >\n", translation(0), translation(1),
            translation(2));
-
-    target_pos = final_trans.back() * origin_pos;
-    cout << "target" << target_pos << endl;
     target_vector = rotation * origin_angle;
-    result_pose.target_angle[0] = atan(target_vector(1) / target_vector(0));
-    result_pose.target_angle[1] = atan(target_vector(0) / target_vector(1));
-    result_pose.target_angle[2] =
+    // if (index >= object_num) {
+    Eigen::Matrix<float, 3, 1> target_angle_;
+
+    Eigen::Matrix<float, 4, 1> target_pos_;
+    target_pos_ = final_trans.back() * origin_pos;
+    target_pos.push_back(target_pos_);
+    cout << "target" << target_pos.back() << endl;
+
+    // result_pose.target_angle[0] = atan(target_vector(1) /
+    // target_vector(0)); result_pose.target_angle[1] = atan(target_vector(0)
+    // / target_vector(1)); result_pose.target_angle[2] =
+    //     atan(sqrt(pow(target_vector(0), 2) + pow(target_vector(1), 2)) /
+    //          target_vector(2));
+    target_angle_ = Eigen::Matrix<float, 3, 1>(
+        atan(target_vector(1) / target_vector(0)),
+        atan(target_vector(0) / target_vector(1)),
         atan(sqrt(pow(target_vector(0), 2) + pow(target_vector(1), 2)) /
-             target_vector(2));
-    cout << "angle2x angle2y angle2z" << result_pose.target_angle[0] << " "
-         << result_pose.target_angle[1] << " " << result_pose.target_angle[2]
-         << endl;
+             target_vector(2)));
+    target_angle.push_back(target_angle_);
+    cout << "angle2x angle2y angle2z" << target_angle.back() << endl;
+    // } else {
+    //   target_pos[index] = final_trans.back() * origin_pos;
+    //   cout << "target" << target_pos[index] << endl;
+
+    //   // result_pose.target_angle[0] = atan(target_vector(1) /
+    //   // target_vector(0)); result_pose.target_angle[1] =
+    //   atan(target_vector(0)
+    //   // / target_vector(1)); result_pose.target_angle[2] =
+    //   //     atan(sqrt(pow(target_vector(0), 2) + pow(target_vector(1), 2)) /
+    //   //          target_vector(2));
+    //   target_angle[index] = Eigen::Matrix<float, 3, 1>(
+    //       atan(target_vector(1) / target_vector(0)),
+    //       atan(target_vector(0) / target_vector(1)),
+    //       atan(sqrt(pow(target_vector(0), 2) + pow(target_vector(1), 2)) /
+    //            target_vector(2)));
+    //   cout << "angle2x angle2y angle2z" << target_angle[index] << endl;
+    // }
+
     // euler_angles = rotation.eulerAngles(2, 1, 0);
     // cout << "yaw(Z) pitch(Y) roll(X)=\n"
     //      << euler_angles.transpose() << endl
     //      << endl;
-
-    for (int i = 0; i < 4; i++) {
-      for (int j = 0; j < 4; j++) {
-        result_pose.translation[i * 4 + j] = final_trans.back()(i, j);
-      }
-    }
-    for (int i = 0; i < 3; i++) {
-      result_pose.target_pos[i] = this->target_pos(i, 0);
-      // result_pose.target_angle[2 - i] = this->euler_angles.transpose()(0, i);
-    }
-    result_pose.object_num = goals.size();
-    if (goals.size())
-      result_pose.if_detect = result_pose.DETECTSUCCESS;
-    else
-      result_pose.if_detect = result_pose.NOTHING;
-    trans_pub.publish(result_pose);
+    /*
+        for (int i = 0; i < 4; i++) {
+          for (int j = 0; j < 4; j++) {
+            result_pose.translation[i * 4 + j] = final_trans.back()(i, j);
+          }
+        }
+        for (int i = 0; i < 3; i++) {
+          result_pose.target_pos[i] = this->target_pos(i, 0);
+          // result_pose.target_angle[2 - i] = this->euler_angles.transpose()(0,
+       i);
+        }
+        result_pose.object_num = goals.size();
+        if (goals.size())
+          result_pose.if_detect = result_pose.DETECTSUCCESS;
+        else
+          result_pose.if_detect = result_pose.NOTHING;
+        trans_pub.publish(result_pose);*/
     // trans_pub.publish(result_pose);
     // pcl::io::savePCDFileBinary("output.pcd", transformed_cloud);
 
     // showCloud(PointCloud::Ptr(&transformed_cloud), model_);
+    if (view_on) {
+      pcl::visualization::PCLVisualizer viewer("example");
+      // // 设置坐标系系统
+      // viewer.addCoordinateSystem(0.5, "cloud", 0);
+      // // 设置背景色
+      // viewer.setBackgroundColor(0.05, 0.05, 0.05,
+      //                           0);  // Setting background to a dark grey
 
-    pcl::visualization::PCLVisualizer viewer("example");
-    // // 设置坐标系系统
-    // viewer.addCoordinateSystem(0.5, "cloud", 0);
-    // // 设置背景色
-    // viewer.setBackgroundColor(0.05, 0.05, 0.05,
-    //                           0);  // Setting background to a dark grey
+      int v1(0);
+      viewer.createViewPort(0.0, 0.0, 0.5, 1.0, v1);
+      viewer.setBackgroundColor(0, 0, 0, v1);
+      // viewer.addPointCloud<pcl::PointXYZ>(cloud1, "sample cloud1", v1);
 
-    int v1(0);
-    viewer.createViewPort(0.0, 0.0, 0.5, 1.0, v1);
-    viewer.setBackgroundColor(0, 0, 0, v1);
-    // viewer.addPointCloud<pcl::PointXYZ>(cloud1, "sample cloud1", v1);
+      viewerOneOff(viewer, this->target_pos[index](0, 0),
+                   this->target_pos[index](1, 0),
+                   this->target_pos[index](2, 0));
 
-    viewerOneOff(viewer, this->target_pos(0, 0), this->target_pos(1, 0),
-                 this->target_pos(2, 0));
+      // 1. 旋转后的点云rotated --------------------------------
+      pcl::PointCloud<pcl::PointXYZ>::Ptr t_cloud(transformed_cloud2);
+      PCLHandler transformed_cloud_handler(t_cloud, 255, 255, 255);
+      viewer.addPointCloud(t_cloud, transformed_cloud_handler,
+                           "transformed_cloud", v1);
+      // 设置渲染属性（点大小）
+      viewer.setPointCloudRenderingProperties(
+          pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "transformed_cloud",
+          v1);
 
-    // 1. 旋转后的点云rotated --------------------------------
-    pcl::PointCloud<pcl::PointXYZ>::Ptr t_cloud(transformed_cloud2);
-    PCLHandler transformed_cloud_handler(t_cloud, 255, 255, 255);
-    viewer.addPointCloud(t_cloud, transformed_cloud_handler,
-                         "transformed_cloud", v1);
-    // 设置渲染属性（点大小）
-    viewer.setPointCloudRenderingProperties(
-        pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "transformed_cloud",
-        v1);
+      // 2. 目标点云target --------------------------------
+      PCLHandler target_cloud_handler(cloud, 255, 100, 100);
+      viewer.addPointCloud(cloud, target_cloud_handler, "target_cloud", v1);
+      // 设置渲染属性（点大小）
+      viewer.setPointCloudRenderingProperties(
+          pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "target_cloud", v1);
 
-    // 2. 目标点云target --------------------------------
-    PCLHandler target_cloud_handler(cloud, 255, 100, 100);
-    viewer.addPointCloud(cloud, target_cloud_handler, "target_cloud", v1);
-    // 设置渲染属性（点大小）
-    viewer.setPointCloudRenderingProperties(
-        pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "target_cloud", v1);
+      // // 3. 模板点云template --------------------------------
+      PCLHandler template_cloud_handler(f_cloud, 100, 255, 255);
+      viewer.addPointCloud(f_cloud, template_cloud_handler, "template_cloud",
+                           v1);
+      // 设置渲染属性（点大小）
+      viewer.setPointCloudRenderingProperties(
+          pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "template_cloud",
+          v1);
+      int v2(0);
+      viewer.createViewPort(0.5, 0.0, 1.0, 1.0, v2);
+      viewer.addPointCloud<pcl::PointXYZ>(cloud_2, "samplecloud2", v2);
+      viewer.setBackgroundColor(0.3, 0.3, 0.3, v2);
+      viewer.addCoordinateSystem(1.0);
 
-    // // 3. 模板点云template --------------------------------
-    PCLHandler template_cloud_handler(f_cloud, 100, 255, 255);
-    viewer.addPointCloud(f_cloud, template_cloud_handler, "template_cloud", v1);
-    // 设置渲染属性（点大小）
-    viewer.setPointCloudRenderingProperties(
-        pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "template_cloud", v1);
-    int v2(0);
-    viewer.createViewPort(0.5, 0.0, 1.0, 1.0, v2);
-    viewer.addPointCloud<pcl::PointXYZ>(cloud_2, "sample cloud2", v2);
-    viewer.setBackgroundColor(0.3, 0.3, 0.3, v2);
-    viewer.addCoordinateSystem(1.0);
-
-    while (!viewer.wasStopped()) {  // Display the visualiser until 'q' key is
-                                    // pressed
-      viewer.spinOnce();
+      while (!viewer.wasStopped()) {  // Display the visualiser until 'q'key is
+        // pressed
+        viewer.spinOnce();
+      }
     }
   }
 }
@@ -367,7 +414,8 @@ Eigen::Matrix4f template_match::icp(pcl::PointCloud<PointT>::Ptr cloud_in,
   // "transformed_cloud");
   // // 设置渲染属性（点大小）
   // viewer.setPointCloudRenderingProperties(
-  //     pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "transformed_cloud");
+  //     pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2,
+  //     "transformed_cloud");
 
   // PCLHandler target_cloud_handler(cloud_out, 255, 100, 100);
   // viewer.addPointCloud(cloud_out, target_cloud_handler, "target_cloud");
@@ -437,6 +485,34 @@ void template_match::mainloop() {
   while (1) {
     // cout << "666" << endl;
     ros::spinOnce();
+    if (com_flag) {
+      vector<pair<int, double> > vec(height_map.begin(), height_map.end());
+      //对线性的vector进行排序
+      sort(vec.begin(), vec.end(), cmp);
+      for (int j = 0; j < vec.size(); ++j) {
+        // cout << vec[j].first << "  " << vec[j].second << endl;
+        ROS_WARN("vec index: %d vec height: %f", vec[j].first, vec[j].second);
+        for (int i = 0; i < 3; i++) {
+          result_pose.target_pos[i] = target_pos[vec[j].first](i);
+          result_pose.target_angle[i] = target_angle[vec[j].first](i);
+        }
+        result_pose.object_num = object_num;
+        result_pose.target_index = vec[j].first;
+        if (object_num)
+          result_pose.if_detect = result_pose.DETECTSUCCESS;
+        else
+          result_pose.if_detect = result_pose.NOTHING;
+
+        while (this->pick_index != vec[j].first) {
+          ros::spinOnce();
+          trans_pub.publish(result_pose);
+        }
+      }
+      height_map.clear();
+      target_angle.clear();
+      target_pos.clear();
+      com_flag = 0;
+    }
     if (arm_state == 1) {
       result_pose.if_detect = 0;
       result_pose.object_num = 0;

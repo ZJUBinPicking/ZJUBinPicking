@@ -4,16 +4,19 @@
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 
+#include <iostream>
+#include <string>
+using namespace std;
 main(int argc, char **argv) {
   ros::init(argc, argv, "output_clouds");
   ros::NodeHandle nh;
+  string file_location;
+  ros::param::get("~file_location", file_location);
   ros::Publisher pcl_pub =
       nh.advertise<sensor_msgs::PointCloud2>("/camera/depth/points", 1);
   pcl::PointCloud<pcl::PointXYZ> cloud;
   sensor_msgs::PointCloud2 output;
-  pcl::io::loadPCDFile(
-      "/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/test5.pcd",
-      cloud);
+  pcl::io::loadPCDFile(file_location, cloud);
   // Convert the cloud to ROS message
   pcl::toROSMsg(cloud, output);
   output.header.frame_id =

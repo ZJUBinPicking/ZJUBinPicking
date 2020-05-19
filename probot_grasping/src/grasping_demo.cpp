@@ -47,9 +47,15 @@ GraspingDemo::GraspingDemo(ros::NodeHandle n_, float pregrasp_x,
   this->pregrasp_x = pregrasp_x;
   this->pregrasp_y = pregrasp_y;
   this->pregrasp_z = pregrasp_z;
+  arm_pub = n_.advertise<bpmsg::arm_state>("/arm_state", 30);
+  trans_sub = n_.subscribe("/goal_translation", 30, &GraspingDemo::posCb, this);
+  armgroup.allowReplanning(true);
 
   ros::AsyncSpinner spinner(1);
   spinner.start();
+  state.pick_state = state.READY_FOR_PICK;
+  state.pick_index = -1;
+  arm_pub.publish(state);
   ros::WallDuration(5.0).sleep();
   ROS_INFO_STREAM("Getting into the Grasping Position....");
   attainPosition(pregrasp_x, pregrasp_y, pregrasp_z);
@@ -58,8 +64,6 @@ GraspingDemo::GraspingDemo(ros::NodeHandle n_, float pregrasp_x,
   // image_sub_ =
   //     it_.subscribe("/camera/color/image_raw", 1, &GraspingDemo::imageCb,
   //     this);
-  trans_sub = n_.subscribe("/goal_translation", 30, &GraspingDemo::posCb, this);
-  armgroup.allowReplanning(true);
 
   // //设置位置(单位：米)和姿态（单位：弧度）的允许误差
   // armgroup.setGoalPositionTolerance(0.001);
@@ -75,9 +79,9 @@ void GraspingDemo::posCb(bpmsg::pose msg) {
   // if (!grasp_running) {
   this->target_pos.clear();
   this->target_angle.clear();
-  ROS_WARN("pos");
+  // ROS_WARN("pos");
   if (msg.if_detect == msg.DETECTSUCCESS) {
-    ROS_WARN("start call");
+    // ROS_WARN("start call");
     for (int i = 0; i < 3; i++) {
       this->target_angle.push_back(msg.target_angle[i]);
     }
@@ -89,19 +93,19 @@ void GraspingDemo::posCb(bpmsg::pose msg) {
     grasp_running = true;
 
     // Temporary Debugging
-    std::cout << " X-Co-ordinate in Robot Frame :" << obj_robot_frame.getX()
-              << std::endl;
-    std::cout << " Y-Co-ordinate in Robot Frame :" << obj_robot_frame.getY()
-              << std::endl;
-    std::cout << " Z-Co-ordinate in Robot Frame :" << obj_robot_frame.getZ()
-              << std::endl;
+    // std::cout << " X-Co-ordinate in Robot Frame :" << obj_robot_frame.getX()
+    //           << std::endl;
+    // std::cout << " Y-Co-ordinate in Robot Frame :" << obj_robot_frame.getY()
+    //           << std::endl;
+    // std::cout << " Z-Co-ordinate in Robot Frame :" << obj_robot_frame.getZ()
+    //           << std::endl;
     this->target_pos.push_back(obj_robot_frame.getX());
     this->target_pos.push_back(obj_robot_frame.getY());
     this->target_pos.push_back(obj_robot_frame.getZ());
-
+    this->pick_index = msg.target_index;
     this->target_num = msg.object_num;
     this->detect_state = msg.if_detect;
-    ROS_WARN("end call");
+    // ROS_WARN("end call");
 
   } else {
     ROS_WARN("nothing");
@@ -228,8 +232,15 @@ void GraspingDemo::attainObject() {
   // target_pose1.Quaternion = target_angle;
   target_pose1.position = currPose.pose.position;
 
-  target_pose1.position.z = obj_robot_frame.getZ() - grasp_z;
-  cout << "grasp_z" << grasp_z << endl;
+  if ((fabs(target_angle[2]) - 1.5) / 1.5 < hor_ratio)
+    target_pose1.position.z = obj_robot_frame.getZ() - hor_grasp_z;
+  else if ((fabs(target_angle[2]) - 0.62) / 0.62 < ver_ratio)
+    target_pose1.position.z = obj_robot_frame.getZ() - ver_grasp_z;
+  else
+    target_pose1.position.z =
+        obj_robot_frame.getZ() - (ver_grasp_z + hor_grasp_z) / 2;
+
+  // cout << "grasp_z" << grasp_z << endl;
   armgroup.setPoseTarget(target_pose1);
   armgroup.move();
 }
@@ -284,15 +295,21 @@ void GraspingDemo::goHome() {
 }
 
 void GraspingDemo::initiateGrasping() {
+  state.pick_state = state.READY_FOR_PICK;
+  state.pick_index = -1;
+  arm_pub.publish(state);
   ros::AsyncSpinner spinner(1);
   spinner.start();
   ros::WallDuration(0.5).sleep();
   cout << "init" << endl;
   homePose = armgroup.getCurrentPose();
+
   if (detect_state) {
     ROS_INFO_STREAM("Approaching the Object....");
     attainObject();
-
+    state.pick_state = state.PICKING;
+    state.pick_index = this->pick_index;
+    arm_pub.publish(state);
     ROS_INFO_STREAM("Attempting to Grasp the Object now..");
     grasp();
     armgroup.setMaxAccelerationScalingFactor(0.02);
@@ -317,6 +334,7 @@ int main(int argc, char **argv) {
   if (!n.getParam("probot_grasping/pregrasp_x", pregrasp_x)) pregrasp_x = 0.20;
   if (!n.getParam("probot_grasping/pregrasp_y", pregrasp_y)) pregrasp_y = -0.17;
   if (!n.getParam("probot_grasping/pregrasp_z", pregrasp_z)) pregrasp_z = 0.28;
+
   GraspingDemo simGrasp(n, pregrasp_x, pregrasp_y, pregrasp_z, length, breadth);
 
   // if (!n.getParam("probot_grasping/grasp_x", simGrasp.grasp_x))
@@ -327,10 +345,13 @@ int main(int argc, char **argv) {
   //   simGrasp.grasp_z = 0.03;
   ros::param::get("~grasp_x", simGrasp.grasp_x);
   ros::param::get("~grasp_y", simGrasp.grasp_y);
-  ros::param::get("~grasp_z", simGrasp.grasp_z);
-  ros::param::get("~change_angle", simGrasp.change_angle);
+  ros::param::get("~hor_grasp_z", simGrasp.hor_grasp_z);
+  ros::param::get("~ver_grasp_z", simGrasp.ver_grasp_z);
+
+  ros::param::get("~hor_ratio", simGrasp.hor_ratio);
+  ros::param::get("~ver_ratio", simGrasp.ver_ratio);
   ROS_WARN("grasp info : %f, %f,%f", simGrasp.grasp_x, simGrasp.grasp_y,
-           simGrasp.grasp_z);
+           simGrasp.ver_grasp_z);
   ROS_INFO_STREAM("Waiting for five seconds..");
 
   // ros::WallDuration(5.0).sleep();

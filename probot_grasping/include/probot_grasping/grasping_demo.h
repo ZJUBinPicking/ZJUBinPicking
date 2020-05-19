@@ -135,10 +135,14 @@ class GraspingDemo {
   ros::Publisher arm_pub;
   ros::Subscriber trans_sub;
   bpmsg::pose result_pos;
-  double grasp_z;
+  bpmsg::arm_state state;
+  double hor_grasp_z, ver_grasp_z;
   double grasp_y;
   double grasp_x;
   double change_angle;
+  double hor_ratio;
+  double ver_ratio;
+  int pick_index = INT_MAX;
   std::vector<double> target_pos;
   std::vector<double> target_angle;
   int target_num = 0;

@@ -28,7 +28,6 @@
 #include <sensor_msgs/PointCloud2.h>
 typedef pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
     PCLHandler;
-
 #include <math.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
@@ -38,6 +37,7 @@ typedef pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
 #include <fstream>
 #include <iostream>
 #include <limits>
+#include <map>
 #include <vector>
 
 #include "bpmsg/arm_state.h"
@@ -230,12 +230,16 @@ class template_match {
   double theta, dx, dy, dz;
   int arm_state;
   int max_num, min_num;
+  int object_num = 0;
+  int com_flag = 0;
+  int pick_index;
+  bool view_on;
   Eigen::Vector3f euler_angles;
   Eigen::Matrix<float, 4, 1> origin_pos;
   Eigen::Matrix<float, 3, 1> origin_angle;
-  Eigen::Matrix<float, 3, 1> target_angle;
+  std::vector<Eigen::Matrix<float, 3, 1> > target_angle;
   Eigen::Matrix<float, 3, 1> target_vector;
-  Eigen::Matrix<float, 4, 1> target_pos;
+  std::vector<Eigen::Matrix<float, 4, 1> > target_pos;
   friend class TemplateAlignment;
   friend class FeatureCloud;
   ros::Subscriber bat_sub;
@@ -244,6 +248,7 @@ class template_match {
   bpmsg::pose result_pose;
   PointCloud::Ptr model_;
   // pcl::PointCloud<PointT>::Ptr cloud_;
+  map<int, double> height_map;
   vector<pcl::PointCloud<PointT>::Ptr> goals;
   // vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> t_cloud;
   std::vector<FeatureCloud> object_templates;
@@ -256,7 +261,7 @@ class template_match {
   void init();
   void mainloop();
   void match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal,
-             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_2);
+             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_2, int index);
   void cluster(pcl::PointCloud<PointT>::Ptr cloud_,
                pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_2);
   void commandCB(const std_msgs::Int8 &msg);
