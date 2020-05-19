@@ -114,7 +114,7 @@ void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
   pass.setFilterLimits(min_z, max_z);   //设置在过滤字段的范围
   pass.setFilterLimitsNegative(false);  //保留还是过滤掉范围内的点
   pass.filter(*cloud_filtered);
-  showCloud(cloud_filtered, mycloud);
+  // showCloud(cloud_filtered, mycloud);
 
   // mycloud = cloud_filtered;
   // cluster(mycloud);
