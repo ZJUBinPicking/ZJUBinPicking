@@ -54,6 +54,10 @@ class GraspingDemo {
    * @brief grippegroup moveit interface for gripper
    */
   moveit::planning_interface::MoveGroupInterface grippergroup;
+    /**
+   * @brief grippegroup moveit interface for end_of_arm
+   */
+  moveit::planning_interface::MoveGroupInterface endgroup;
   /**
    * @brief it_ takes care of message to image conversion
    */

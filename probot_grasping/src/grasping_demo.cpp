@@ -22,6 +22,7 @@ GraspingDemo::GraspingDemo(ros::NodeHandle n_, float pregrasp_x,
     : it_(n_),
       armgroup("manipulator"),
       grippergroup("gripper"),
+      endgroup("end_of_arm"),
       vMng_(length, breadth) {
   this->nh_ = n_;
 
@@ -258,21 +259,51 @@ void GraspingDemo::lift() {
 
   // For getting the pose
   geometry_msgs::PoseStamped currPose = armgroup.getCurrentPose();
-
+  ros::WallDuration(0.5).sleep();
   geometry_msgs::Pose target_pose1;
   target_pose1.orientation = currPose.pose.orientation;
   target_pose1.position = currPose.pose.position;
 
   // Starting Postion after picking
   target_pose1.position.z = target_pose1.position.z + grasp_x;
+  armgroup.setPoseTarget(target_pose1);
+  armgroup.move();
+  ros::WallDuration(0.5).sleep();
+  // currPose = armgroup.getCurrentPose();
+  // geometry_msgs::Pose target_pose2;
+  // target_pose2.position = currPose.pose.position;
+  // tf2::Quaternion orientation;
+  // target_angle[0] > 0 ? orientation.setRPY(1.57, 1.57, -1.57)
+  //                     : orientation.setRPY(1.57, 1.57, 1.57);
+  // target_pose2.orientation.x = orientation.getX();
+  // target_pose2.orientation.y = orientation.getY();
+  // target_pose2.orientation.z = orientation.getZ();
+  // target_pose2.orientation.w = orientation.getW();
+  vector<double> joint_value(6);
+  joint_value = armgroup.getCurrentJointValues();
 
+  joint_value[5] = joint_value[0];
+  // sensor_msgs::JointState value = [joint_value[0],]
+  armgroup.setJointValueTarget(joint_value);
+  armgroup.move();
+  // grippergroup.setOrientationTarget(orientation.getX(),
+  // orientation.getY(),orientation.getZ(), orientation.getW());
+  // endgroup.setNamedTarget("turn");
+  // endgroup.move();
+  // armgroup.setPoseTarget(target_pose2);
+  // armgroup.move();
+  ros::WallDuration(0.5).sleep();
+  currPose = armgroup.getCurrentPose();
+  geometry_msgs::Pose target_pose3;
+  target_pose3.orientation = currPose.pose.orientation;
+  target_pose3.position = currPose.pose.position;
   // if (rand() % 2) {
-  // target_pose1.position.y = target_pose1.position.y + grasp_y;
+  target_pose3.position.y = target_pose3.position.y > 0 ? 0.17 : -0.17;
   // } else {
   //   target_pose1.position.y = target_pose1.position.y - grasp_y;
   // }
 
-  armgroup.setPoseTarget(target_pose1);
+  armgroup.setPoseTarget(target_pose3);
   armgroup.move();
 
   // Open Gripper
@@ -305,7 +336,11 @@ void GraspingDemo::initiateGrasping() {
   homePose = armgroup.getCurrentPose();
 
   if (detect_state) {
-    ROS_INFO_STREAM("Approaching the Object....");
+    // ROS_INFO_STREAM("Approaching the Object....");
+    // endgroup.setNamedTarget("turn");
+    // endgroup.move();
+    // ros::WallDuration(0.5).sleep();
+    // ROS_ERROR_STREAM("turn sucessful!!!!!!!!!!!");
     attainObject();
     state.pick_state = state.PICKING;
     state.pick_index = this->pick_index;
@@ -313,7 +348,7 @@ void GraspingDemo::initiateGrasping() {
     ROS_INFO_STREAM("Attempting to Grasp the Object now..");
     grasp();
     armgroup.setMaxAccelerationScalingFactor(0.02);
-    armgroup.setMaxVelocityScalingFactor(0.1);
+    armgroup.setMaxVelocityScalingFactor(0.15);
     ROS_INFO_STREAM("Lifting the Object....");
     lift();
     armgroup.setMaxAccelerationScalingFactor(0.2);
