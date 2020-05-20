@@ -87,7 +87,7 @@ void GraspingDemo::posCb(bpmsg::pose msg) {
     }
     obj_camera_frame.setZ(-msg.target_pos[1]);
     obj_camera_frame.setY(-msg.target_pos[0]);
-    obj_camera_frame.setX(0.45);
+    obj_camera_frame.setX(msg.target_pos[2]);
 
     obj_robot_frame = camera_to_robot_ * obj_camera_frame;
     grasp_running = true;
@@ -231,14 +231,14 @@ void GraspingDemo::attainObject() {
 
   // target_pose1.Quaternion = target_angle;
   target_pose1.position = currPose.pose.position;
-
-  if ((fabs(target_angle[2]) - 1.5) / 1.5 < hor_ratio)
-    target_pose1.position.z = obj_robot_frame.getZ() - hor_grasp_z;
-  else if ((fabs(target_angle[2]) - 0.62) / 0.62 < ver_ratio)
-    target_pose1.position.z = obj_robot_frame.getZ() - ver_grasp_z;
-  else
-    target_pose1.position.z =
-        obj_robot_frame.getZ() - (ver_grasp_z + hor_grasp_z) / 2;
+  target_pose1.position.z = obj_robot_frame.getZ() - hor_grasp_z;
+  // if ((fabs(target_angle[2]) - 1.5) / 1.5 < hor_ratio)
+  //   target_pose1.position.z = obj_robot_frame.getZ() - hor_grasp_z;
+  // else if ((fabs(target_angle[2]) - 0.62) / 0.62 < ver_ratio)
+  //   target_pose1.position.z = obj_robot_frame.getZ() - ver_grasp_z;
+  // else
+  //   target_pose1.position.z =
+  //       obj_robot_frame.getZ() - (ver_grasp_z + hor_grasp_z) / 2;
 
   // cout << "grasp_z" << grasp_z << endl;
   armgroup.setPoseTarget(target_pose1);
