@@ -168,7 +168,7 @@ void GraspingDemo::attainPosition(float x, float y, float z) {
   target_pose1.position.y = y;
   target_pose1.position.z = z;
   armgroup.setPoseTarget(target_pose1);
-
+  armgroup.move();
   /* Uncomment Following section to visualize in rviz */
   // We can print the name of the reference frame for this robot.
   // ROS_INFO("Reference frame: %s", armgroup.getPlanningFrame().c_str());
@@ -190,8 +190,6 @@ void GraspingDemo::attainPosition(float x, float y, float z) {
   visual_tools.publishTrajectoryLine(my_plan.trajectory_, joint_model_group);
   visual_tools.trigger();
   visual_tools.prompt("next step");*/
-
-  armgroup.move();
 }
 
 void GraspingDemo::attainObject() {
@@ -282,8 +280,9 @@ void GraspingDemo::lift() {
   vector<double> joint_value(6);
   joint_value = armgroup.getCurrentJointValues();
 
-  // target_angle[0] > 0 ? joint_value[5] = joint_value[0] + CV_PI
-  //                     : joint_value[5] = joint_value[0];
+  // joint_value[0] > 0 ? joint_value[0] = CV_PI / 6 : joint_value[0] = -CV_PI /
+  // 6;
+
   ROS_WARN("before: %d", joint_value[5]);
   while (joint_value[5] > CV_PI || joint_value[5] < -CV_PI) {
     joint_value[5] > CV_PI ? joint_value[5] -= CV_PI : joint_value[5] += CV_PI;
@@ -308,23 +307,34 @@ void GraspingDemo::lift() {
   // armgroup.setPoseTarget(target_pose2);
   // armgroup.move();
   ros::WallDuration(0.5).sleep();
-  currPose = armgroup.getCurrentPose();
-  geometry_msgs::Pose target_pose3;
-  target_pose3.orientation = currPose.pose.orientation;
-  target_pose3.position = currPose.pose.position;
-  // if (rand() % 2) {
-  target_pose3.position.y = target_pose3.position.y > 0 ? 0.17 : -0.17;
-  // } else {
-  //   target_pose1.position.y = target_pose1.position.y - grasp_y;
-  // }
+  joint_value = armgroup.getCurrentJointValues();
 
-  armgroup.setPoseTarget(target_pose3);
+  joint_value[0] > 0 ? joint_value[0] = CV_PI / 5 : joint_value[0] = -CV_PI / 5;
+  armgroup.setJointValueTarget(joint_value);
   armgroup.move();
+  // currPose = armgroup.getCurrentPose();
+  // geometry_msgs::Pose target_pose3;
+  // target_pose3.orientation = currPose.pose.orientation;
+  // target_pose3.position = currPose.pose.position;
+  // // if (rand() % 2) {
+  // target_pose3.position.y = target_pose3.position.y > 0 ? 0.17 : -0.17;
+  // // } else {
+  // //   target_pose1.position.y = target_pose1.position.y - grasp_y;
+  // // }
+
+  // armgroup.setPoseTarget(target_pose3);
+  // armgroup.move();
 
   // Open Gripper
   ros::WallDuration(0.5).sleep();
   grippergroup.setNamedTarget("open");
   grippergroup.move();
+
+  joint_value = armgroup.getCurrentJointValues();
+
+  joint_value[0] = 0;
+  armgroup.setJointValueTarget(joint_value);
+  armgroup.move();
   // target_pose1.position.z = target_pose1.position.z + 0.06;
   // armgroup.setPoseTarget(target_pose1);
   // armgroup.move();
@@ -363,7 +373,7 @@ void GraspingDemo::initiateGrasping() {
     ROS_INFO_STREAM("Attempting to Grasp the Object now..");
     grasp();
     armgroup.setMaxAccelerationScalingFactor(0.02);
-    armgroup.setMaxVelocityScalingFactor(0.15);
+    armgroup.setMaxVelocityScalingFactor(0.5);
     ROS_INFO_STREAM("Lifting the Object....");
     lift();
     armgroup.setMaxAccelerationScalingFactor(0.2);
