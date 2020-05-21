@@ -282,7 +282,22 @@ void GraspingDemo::lift() {
   vector<double> joint_value(6);
   joint_value = armgroup.getCurrentJointValues();
 
-  joint_value[5] = joint_value[0];
+  // target_angle[0] > 0 ? joint_value[5] = joint_value[0] + CV_PI
+  //                     : joint_value[5] = joint_value[0];
+  ROS_WARN("before: %d", joint_value[5]);
+  while (joint_value[5] > CV_PI || joint_value[5] < -CV_PI) {
+    joint_value[5] > CV_PI ? joint_value[5] -= CV_PI : joint_value[5] += CV_PI;
+  }
+  if (joint_value[5] >= -CV_PI / 2 && joint_value[5] < CV_PI / 2)
+    joint_value[5] = joint_value[0];
+  else if (joint_value[5] >= CV_PI / 2 && joint_value[5] < CV_PI)
+    joint_value[5] = CV_PI + joint_value[0];
+  else if (joint_value[5] >= -CV_PI && joint_value[5] < -CV_PI / 2)
+    joint_value[5] = -CV_PI + joint_value[0];
+  else {
+    joint_value[5] = joint_value[0];
+  }
+  ROS_WARN("after: %d", joint_value[5]);
   // sensor_msgs::JointState value = [joint_value[0],]
   armgroup.setJointValueTarget(joint_value);
   armgroup.move();
@@ -320,15 +335,12 @@ void GraspingDemo::goHome() {
 
   // Go to Home Position
   attainPosition(pregrasp_x, pregrasp_y, pregrasp_z);
-  attainPosition(homePose.pose.position.x, homePose.pose.position.y,
-                 homePose.pose.position.z);
+  // attainPosition(homePose.pose.position.x, homePose.pose.position.y,
+  //                homePose.pose.position.z);
   // ros::WallDuration(1.0).sleep();
 }
 
 void GraspingDemo::initiateGrasping() {
-  state.pick_state = state.READY_FOR_PICK;
-  state.pick_index = -1;
-  arm_pub.publish(state);
   ros::AsyncSpinner spinner(1);
   spinner.start();
   ros::WallDuration(0.5).sleep();
@@ -336,6 +348,9 @@ void GraspingDemo::initiateGrasping() {
   homePose = armgroup.getCurrentPose();
 
   if (detect_state) {
+    state.pick_state = state.READY_FOR_PICK;
+    state.pick_index = -1;
+    arm_pub.publish(state);
     // ROS_INFO_STREAM("Approaching the Object....");
     // endgroup.setNamedTarget("turn");
     // endgroup.move();
@@ -355,6 +370,12 @@ void GraspingDemo::initiateGrasping() {
     armgroup.setMaxVelocityScalingFactor(0.8);
     // ROS_INFO_STREAM("Going back to home position....");
     // goHome();
+  } else {
+    goHome();
+    ros::WallDuration(1.0).sleep();
+    state.pick_state = state.READY_FOR_PICK;
+    state.pick_index = -1;
+    arm_pub.publish(state);
   }
   grasp_running = false;
 }
