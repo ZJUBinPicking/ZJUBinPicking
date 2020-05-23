@@ -230,14 +230,16 @@ void GraspingDemo::attainObject() {
 
   // target_pose1.Quaternion = target_angle;
   target_pose1.position = currPose.pose.position;
-  target_pose1.position.z = obj_robot_frame.getZ() - hor_grasp_z;
-  // if ((fabs(target_angle[2]) - 1.5) / 1.5 < hor_ratio)
-  //   target_pose1.position.z = obj_robot_frame.getZ() - hor_grasp_z;
-  // else if ((fabs(target_angle[2]) - 0.62) / 0.62 < ver_ratio)
-  //   target_pose1.position.z = obj_robot_frame.getZ() - ver_grasp_z;
-  // else
-  //   target_pose1.position.z =
-  //       obj_robot_frame.getZ() - (ver_grasp_z + hor_grasp_z) / 2;
+  // target_pose1.position.z = obj_robot_frame.getZ() - hor_grasp_z;
+  if (fabs(fabs(target_angle[2]) - 1.5) < hor_ratio) {
+    target_pose1.position.z = obj_robot_frame.getZ() - hor_grasp_z;
+    ROS_WARN("HOR");
+  } else if (fabs(fabs(target_angle[2]) - 0.4) < ver_ratio) {
+    target_pose1.position.z = obj_robot_frame.getZ() - ver_grasp_z;
+    ROS_WARN("VER");
+  } else
+    target_pose1.position.z =
+        obj_robot_frame.getZ() - (ver_grasp_z + hor_grasp_z) / 2;
 
   // cout << "grasp_z" << grasp_z << endl;
   armgroup.setPoseTarget(target_pose1);
@@ -288,13 +290,13 @@ void GraspingDemo::lift() {
     joint_value[5] > CV_PI ? joint_value[5] -= CV_PI : joint_value[5] += CV_PI;
   }
   if (joint_value[5] >= -CV_PI / 2 && joint_value[5] < CV_PI / 2)
-    joint_value[5] = joint_value[0];
+    joint_value[5] = 0;  // joint_value[0];
   else if (joint_value[5] >= CV_PI / 2 && joint_value[5] < CV_PI)
-    joint_value[5] = CV_PI + joint_value[0];
+    joint_value[5] = CV_PI;  //+ joint_value[0];
   else if (joint_value[5] >= -CV_PI && joint_value[5] < -CV_PI / 2)
-    joint_value[5] = -CV_PI + joint_value[0];
+    joint_value[5] = -CV_PI;  // + joint_value[0];
   else {
-    joint_value[5] = joint_value[0];
+    joint_value[5] = 0;  // joint_value[0];
   }
   ROS_WARN("after: %d", joint_value[5]);
   // sensor_msgs::JointState value = [joint_value[0],]
@@ -308,8 +310,24 @@ void GraspingDemo::lift() {
   // armgroup.move();
   ros::WallDuration(0.5).sleep();
   joint_value = armgroup.getCurrentJointValues();
+  // joint_value[0] = -CV_PI / 6;
+  // if (joint_value[0] >= 0 && joint_value[0] < CV_PI)
+  //   joint_value[0] = CV_PI / 6;  // joint_value[0]
+  // else if (joint_value[0] >= -CV_PI && joint_value[0] < 0)
+  //   joint_value[0] = -CV_PI / 6;  // + joint_value[0];
+  // else if (joint_value[0] > CV_PI)
+  //   joint_value[0] = CV_PI + CV_PI / 6;  //+ joint_value[0];
+  // else if (joint_value[0] < -CV_PI)
+  //   joint_value[0] = -CV_PI / 6 - CV_PI;  // joint_value[0];
+  // else
+  //   joint_value[0] = CV_PI / 6;
+  int k = joint_value[0] / CV_PI;
+  double res = joint_value[0] - k * CV_PI;
+  res > 0 ? joint_value[0] = k * CV_PI + CV_PI / 6
+          : joint_value[0] = k * CV_PI - CV_PI / 6;
 
-  joint_value[0] > 0 ? joint_value[0] = CV_PI / 5 : joint_value[0] = -CV_PI / 5;
+  // joint_value[0] > 0 ? joint_value[0] = CV_PI / 6 : joint_value[0] = -CV_PI /
+  // 6;
   armgroup.setJointValueTarget(joint_value);
   armgroup.move();
   // currPose = armgroup.getCurrentPose();
