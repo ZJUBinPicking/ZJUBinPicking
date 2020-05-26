@@ -11,8 +11,8 @@
         <param name="pregrasp_z"            value="0.28"/>
          <param name="grasp_x"            value="0.07"/>
          <param name="grasp_y"            value="0.1"/>
-         <param name="hor_grasp_z"            value="-0.008"/>
-         <param name="ver_grasp_z"            value="-0.007"/>
+         <param name="hor_grasp_z"            value="-0.009"/>
+         <param name="ver_grasp_z"            value="-0.005"/>
          <param name="hor_ratio"            value="0.4"/>
          <param name="ver_ratio"            value="0.4"/>
          <param name="change_angle"            value="0"/>
