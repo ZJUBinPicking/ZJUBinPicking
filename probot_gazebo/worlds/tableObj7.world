@@ -83,9 +83,13 @@
         <collision name='collision'>
           <geometry>
             <mesh>
+              <uri> model://probot_description/meshes/PROBOT_Anno/TCP.STL</uri>
+              <scale>0.24 0.35 0.35</scale>
+              </mesh>
+            <!-->mesh>
               <uri>model://coke_can/meshes/coke_can.dae</uri>
               <scale>0.24 0.24 0.35</scale>
-            </mesh>
+            </mesh-->
           </geometry>
           <max_contacts>10</max_contacts>
           <surface>
@@ -143,10 +147,11 @@
         </inertial>
         <collision name='collision'>
           <geometry>
-            <mesh>
+             <mesh filename="package://probot_description/meshes/PROBOT_Anno/TCP.STL" scale="0.24 0.35 0.35"/>
+            <!-->mesh>
               <uri>model://coke_can/meshes/coke_can.dae</uri>
               <scale>0.24 0.24 0.35</scale>
-            </mesh>
+            </mesh-->
           </geometry>
           <max_contacts>10</max_contacts>
           <surface>
@@ -170,10 +175,11 @@
         </collision>
         <visual name='visual'>
           <geometry>
-            <mesh>
+             <mesh filename="package://probot_description/meshes/PROBOT_Anno/TCP.STL" scale="0.24 0.24 0.35"/>
+            <!-->mesh>
               <uri>model://coke_can/meshes/coke_can.dae</uri>
               <scale>0.24 0.24 0.35</scale>
-            </mesh>
+            </mesh-->
           </geometry>
           <material>
             <script>
@@ -204,10 +210,11 @@
         </inertial>
         <collision name='collision'>
           <geometry>
-            <mesh>
+             <mesh filename="package://probot_description/meshes/PROBOT_Anno/TCP.STL" scale="0.24 0.24 0.35"/>
+            <!-->mesh>
               <uri>model://coke_can/meshes/coke_can.dae</uri>
               <scale>0.24 0.24 0.35</scale>
-            </mesh>
+            </mesh-->
           </geometry>
           <max_contacts>10</max_contacts>
           <surface>

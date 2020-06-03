@@ -15,10 +15,13 @@
 	<param name="dy"  type="double" value="0"/>
 	<param name="dz"  type="double" value="-180"/>
 	<param name="max_num"  type="int" value="20000"/>
-	<param name="min_num"  type="int" value="59"/>
+	<param name="min_num"  type="int" value="80"/>
 	<param name="view_on"  type="bool" value="0"/>
+	<param name="simulation"  type="bool" value="0"/>
+	<param name="model_file_"  type="string" value="/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/project837.pcd"/>
+	<param name="model_file_2"  type="string" value="/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/cylinder.pcd"/>
 	</node>
 	<!-- <node pkg="template_match" type="output_clouds" name="output_clouds" output="screen">
-	<param name="file_location"  type="string" value="/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/newtest3.pcd"/>
+	<param name="file_location"  type="string" value="/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/twp2.pcd"/>
 	</node> -->
 </launch>

@@ -1235,8 +1235,8 @@
         <collision name='collision'>
           <geometry>
             <mesh>
-              <uri>model://coke_can/meshes/coke_can.dae</uri>
-              <scale>0.24 0.24 0.35</scale>
+              <uri>model://twp/meshes/TWP.STL</uri>
+              <scale>0.0005 0.0005 0.0005</scale>
             </mesh>
           </geometry>
           <max_contacts>10</max_contacts>
@@ -1262,8 +1262,8 @@
         <visual name='visual'>
           <geometry>
             <mesh>
-              <uri>model://coke_can/meshes/coke_can.dae</uri>
-              <scale>0.24 0.24 0.35</scale>
+              <uri>model://twp/meshes/TWP.STL</uri>
+              <scale>0.0005 0.0005 0.0005</scale>
             </mesh>
           </geometry>
           <material>

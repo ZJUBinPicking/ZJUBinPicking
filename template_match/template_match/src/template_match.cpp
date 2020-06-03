@@ -3,8 +3,16 @@ int user_data;
 bool cmp(const pair<int, double> &a, const pair<int, double> &b) {
   return a.second < b.second;
 }
+// 0 0.015 0.015
+// 0.016 0.015 0.017
+
+// 0.016 0.015 0.030
+//  0 0.0148 0.029
+
+// 0.014 0.014 0
+// 0.0025 0.014 0
 void viewerOneOff(pcl::visualization::PCLVisualizer &viewer, double x, double y,
-                  double z) {
+                  double z, string name) {
   // viewer.setBackgroundColor(1.0, 0.5, 1.0);
   //球体坐标
   pcl::PointXYZ o;
@@ -12,7 +20,7 @@ void viewerOneOff(pcl::visualization::PCLVisualizer &viewer, double x, double y,
   o.y = y;
   o.z = z;
   //添加球体
-  viewer.addSphere(o, 0.001, "sphere", 0);
+  viewer.addSphere(o, 0.001, 255, 0, 0, name, 0);
   std::cout << "i only run once" << std::endl;
 }
 
@@ -50,12 +58,30 @@ void template_match::init() {
   ros::param::get("~max_num", max_num);
   ros::param::get("~min_num", min_num);
   ros::param::get("~view_on", view_on);
-  this->model_ = PointCloud::Ptr(new PointCloud);
-  pcl::io::loadPCDFile(
-      "/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/cylinder.pcd",
-      *model_);
-  origin_pos << 0.1, 0.1, 0.12, 1;
+  ros::param::get("~model_file_", model_file_);
+  ros::param::get("~model_file_2", model_file_2);
+  ros::param::get("~simulation", simulation);
+  this->model_pipe = PointCloud::Ptr(new PointCloud);
+  pcl::io::loadPCDFile(model_file_, *model_pipe);
+  this->model_cylinder = PointCloud::Ptr(new PointCloud);
+  pcl::io::loadPCDFile(model_file_2, *model_cylinder);
+  pcl::PointXYZ pipe_minpt, pipe_maxpt, cy_minpt, cy_maxpt;
+  pcl::getMinMax3D(*model_pipe, pipe_minpt, pipe_maxpt);
+  // pcl::getMinMax3D(*model_cylinder, cy_minpt, cy_maxpt);
+  // cout << "pipe min" << pipe_minpt << endl;
+  // cout << "pipe max" << pipe_maxpt << endl;
+  // cout << "cylinder min" << cy_minpt << endl;
+  // cout << "cylinder max" << cy_maxpt << endl;
+
+  origin_pos << 0.008, 0.015, 0.016, 1;
   origin_angle << 0, 0, 1;
+
+  Eigen::Matrix<float, 4, 1> temp;
+  temp << 0.008, 0.015, 0.030, 1;
+  grasp_pos.push_back(temp);
+  Eigen::Matrix<float, 4, 1> temp2;
+  temp2 << 0.008, 0.014, 0, 1;
+  grasp_pos.push_back(temp2);
   cout << origin_pos << endl;
   cout << origin_angle << endl;
   // ros::spinOnce();
@@ -114,23 +140,36 @@ void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
   pass.setFilterLimits(min_z, max_z);   //设置在过滤字段的范围
   pass.setFilterLimitsNegative(false);  //保留还是过滤掉范围内的点
   pass.filter(*cloud_filtered);
-  if (view_on) showCloud(cloud_filtered, mycloud);
+  if (view_on) {
+    // showCloud(cloud_filtered, mycloud);
+    showCloud(cloud_filtered, mycloud);
+    // pcl::io::savePCDFileASCII(
+    //     "/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/"
+    //     "gather.pcd",
+    //     *cloud_filtered);
+  }
 
   // mycloud = cloud_filtered;
   // cluster(mycloud);
   // trans_pub.publish(result_pose);
 
   // if arm is waiting for picking or fail in picking, the program will continue
-  // detecting
+  // detectingcom_flag
   if ((arm_state == 0 || arm_state == 2) && cloud_filtered->points.size() &&
       !com_flag) {
     std::cout << "The points data:  " << cloud_filtered->points.size()
               << std::endl;
-    showCloud(cloud_filtered, mycloud);
+    // showCloud(cloud_filtered, mycloud);
 
     trans_pub.publish(result_pose);
     cluster(cloud_filtered, mycloud);
     // match(cloud_filtered, mycloud);
+  }
+  if (simulation) {
+    std::cout << "Simulation!!!!The points data:  "
+              << cloud_filtered->points.size() << std::endl;
+    arm_state = 0;
+    cluster(cloud_filtered, mycloud);
   }
   // if arm has already picked the object, the program will stop detect, and
   // restart for next detection
@@ -162,6 +201,7 @@ void template_match::cluster(pcl::PointCloud<PointT>::Ptr cloud_,
     for (std::vector<pcl::PointIndices>::const_iterator it =
              cluster_indices.begin();
          it != cluster_indices.end() && arm_state != 1; ++it) {
+      start = clock();
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster(
           new pcl::PointCloud<pcl::PointXYZ>);
 
@@ -179,7 +219,15 @@ void template_match::cluster(pcl::PointCloud<PointT>::Ptr cloud_,
 
       ss << "cloud_cluster_" << j;
       goals.push_back(cloud_cluster);
-      match(cloud_cluster, cloud_2, j);
+      pcl::PointXYZ min, max, cy_minpt, cy_maxpt;
+      pcl::getMinMax3D(*cloud_cluster, min, max);
+      float temp = pow((min.x - max.x), 2) + pow((min.y - max.y), 2) +
+                   pow((min.z - max.z), 2);
+      cout << temp << endl;
+      // if (temp > 0.001825)
+      match(cloud_cluster, cloud_2, model_pipe, j);
+      // else
+      //   match(cloud_cluster, cloud_2, model_cylinder, j);
       height_map.insert(make_pair(j, target_pos[j](2)));
       j++;
     }
@@ -208,6 +256,7 @@ void template_match::cluster(pcl::PointCloud<PointT>::Ptr cloud_,
 
 void template_match::match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal,
                            pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_2,
+                           pcl::PointCloud<pcl::PointXYZ>::Ptr model,
                            int index) {
   if (arm_state == 0 || arm_state == 2) {
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(
@@ -215,7 +264,7 @@ void template_match::match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal,
     cloud = goal;
     // for (int i = 0; i < goals.size(); i++) {
     FeatureCloud template_cloud;
-    template_cloud.setInputCloud(model_);
+    template_cloud.setInputCloud(model);
     object_templates.push_back(template_cloud);
     // Set the TemplateAlignment inputs
     TemplateAlignment template_align;
@@ -245,6 +294,12 @@ void template_match::match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal,
 
     final_trans.push_back(icp(f_cloud, cloud) *
                           best_alignment.final_transformation);
+
+    end = clock();
+    double endtime = (double)(end - start) / CLOCKS_PER_SEC;
+    cout << "Total time:" << end << "  " << start << "  " << endtime << "s"
+         << endl;  // s为单位
+    // cout << "Total time:" << endtime * 1000 << "ms" << endl;  // ms为单位
 
     pcl::PointCloud<pcl::PointXYZ> *transformed_cloud2 =
         new pcl::PointCloud<pcl::PointXYZ>;
@@ -342,9 +397,15 @@ void template_match::match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal,
       // viewer.addPointCloud<pcl::PointXYZ>(cloud1, "sample cloud1", v1);
 
       viewerOneOff(viewer, this->target_pos[index](0, 0),
-                   this->target_pos[index](1, 0),
-                   this->target_pos[index](2, 0));
+                   this->target_pos[index](1, 0), this->target_pos[index](2, 0),
+                   "origin");
+      Eigen::Matrix<float, 4, 1> temp;
 
+      for (int i = 0; i < grasp_pos.size(); i++) {
+        temp = final_trans.back() * grasp_pos[i];
+
+        viewerOneOff(viewer, temp(0, 0), temp(1, 0), temp(2, 0), "gasp" + i);
+      }
       // 1. 旋转后的点云rotated --------------------------------
       pcl::PointCloud<pcl::PointXYZ>::Ptr t_cloud(transformed_cloud2);
       PCLHandler transformed_cloud_handler(t_cloud, 255, 255, 255);
@@ -386,7 +447,15 @@ void template_match::match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal,
 
 Eigen::Matrix4f template_match::icp(pcl::PointCloud<PointT>::Ptr cloud_in,
                                     pcl::PointCloud<PointT>::Ptr cloud_out) {
+  double dist = 0.05;
+  double rans = 0.05;
+  int iter = 50;
+
+  bool nonLinear = false;
   pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+  icp.setMaximumIterations(iter);
+  icp.setMaxCorrespondenceDistance(dist);
+  icp.setRANSACOutlierRejectionThreshold(rans);
   icp.setInputSource(cloud_in);
   icp.setInputTarget(cloud_out);
 

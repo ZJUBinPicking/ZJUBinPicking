@@ -34,6 +34,7 @@ typedef pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
 #include <pcl/registration/icp.h>
 
 #include <Eigen/Core>
+#include <ctime>
 #include <fstream>
 #include <iostream>
 #include <limits>
@@ -137,9 +138,9 @@ class TemplateAlignment {
   };
 
   TemplateAlignment()
-      : min_sample_distance_(0.005f),               // 0.005f
-        max_correspondence_distance_(0.1f * 0.1f),  // 0.1f * 0.1f
-        nr_iterations_(1000) {                      // 1000
+      : min_sample_distance_(0.002f),               // 0.005f 0.002
+        max_correspondence_distance_(0.1f * 0.1f),  // 0.1f * 0.1f 0.1*0.1
+        nr_iterations_(1500) {                      // 1000 2000
     // Initialize the parameters in the Sample Consensus Initial Alignment
     // (SAC-IA) algorithm
     sac_ia_.setMinSampleDistance(min_sample_distance_);
@@ -177,7 +178,7 @@ class TemplateAlignment {
   // Align all of template clouds set by addTemplateCloud to the target
   // specified by setTargetCloud ()
   void alignAll(std::vector<TemplateAlignment::Result,
-                            Eigen::aligned_allocator<Result> > &results) {
+                            Eigen::aligned_allocator<Result>> &results) {
     results.resize(templates_.size());
     for (size_t i = 0; i < templates_.size(); ++i) {
       align(templates_[i], results[i]);
@@ -188,7 +189,7 @@ class TemplateAlignment {
   // alignment score
   int findBestAlignment(TemplateAlignment::Result &result) {
     // Align all of the templates to the target cloud
-    std::vector<Result, Eigen::aligned_allocator<Result> > results;
+    std::vector<Result, Eigen::aligned_allocator<Result>> results;
     alignAll(results);
 
     // Find the template with the best (lowest) fitness score
@@ -234,19 +235,26 @@ class template_match {
   int com_flag = 0;
   int pick_index;
   bool view_on;
+  bool simulation;
+  clock_t start, end;
+  string model_file_, model_file_2;
   Eigen::Vector3f euler_angles;
   Eigen::Matrix<float, 4, 1> origin_pos;
+  std::vector<Eigen::Matrix<float, 4, 1>> grasp_pos;
+
   Eigen::Matrix<float, 3, 1> origin_angle;
-  std::vector<Eigen::Matrix<float, 3, 1> > target_angle;
+  std::vector<Eigen::Matrix<float, 3, 1>> target_angle;
   Eigen::Matrix<float, 3, 1> target_vector;
-  std::vector<Eigen::Matrix<float, 4, 1> > target_pos;
+  std::vector<Eigen::Matrix<float, 4, 1>> target_pos;
   friend class TemplateAlignment;
   friend class FeatureCloud;
   ros::Subscriber bat_sub;
   ros::Subscriber arm_sub;
   ros::Publisher trans_pub;
   bpmsg::pose result_pose;
-  PointCloud::Ptr model_;
+  PointCloud::Ptr model_pipe;
+  PointCloud::Ptr model_cylinder;
+
   // pcl::PointCloud<PointT>::Ptr cloud_;
   map<int, double> height_map;
   vector<pcl::PointCloud<PointT>::Ptr> goals;
@@ -261,7 +269,8 @@ class template_match {
   void init();
   void mainloop();
   void match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal,
-             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_2, int index);
+             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_2,
+             pcl::PointCloud<pcl::PointXYZ>::Ptr model, int index);
   void cluster(pcl::PointCloud<PointT>::Ptr cloud_,
                pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_2);
   void commandCB(const std_msgs::Int8 &msg);
