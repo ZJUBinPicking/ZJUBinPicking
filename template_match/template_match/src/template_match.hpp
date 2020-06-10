@@ -235,9 +235,9 @@ class template_match {
   int com_flag = 0;
   int pick_index;
   bool view_on;
-  bool simulation;
+  bool simulation, vision_simulation;
   clock_t start, end;
-  string model_file_, model_file_2;
+  string model_file_, model_file_2, model_file_1;
   Eigen::Vector3f euler_angles;
   Eigen::Matrix<float, 4, 1> origin_pos;
   std::vector<Eigen::Matrix<float, 4, 1>> grasp_pos;

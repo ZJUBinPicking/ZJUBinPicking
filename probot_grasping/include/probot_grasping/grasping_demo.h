@@ -54,7 +54,7 @@ class GraspingDemo {
    * @brief grippegroup moveit interface for gripper
    */
   moveit::planning_interface::MoveGroupInterface grippergroup;
-    /**
+  /**
    * @brief grippegroup moveit interface for end_of_arm
    */
   moveit::planning_interface::MoveGroupInterface endgroup;
@@ -142,14 +142,14 @@ class GraspingDemo {
   bpmsg::arm_state state;
   double hor_grasp_z, ver_grasp_z;
   double grasp_y;
-  double grasp_x;
+  double grasp_x, real_z;
   double change_angle;
   double hor_ratio;
   double ver_ratio;
   int pick_index = INT_MAX;
   std::vector<double> target_pos;
   std::vector<double> target_angle;
-  int target_num = 0;
+  int target_num = 0, simulation;
   int detect_state = 0;
   void posCb(bpmsg::pose msg);
   /**

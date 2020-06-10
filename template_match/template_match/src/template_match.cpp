@@ -37,13 +37,6 @@ template_match::template_match() { init(); }
 
 void template_match::init() {
   ros::NodeHandle nh;
-  bat_sub = nh.subscribe("/camera/depth/points", 1, &template_match::cloudCB,
-                         this);  //接收点云
-  arm_sub = nh.subscribe("/arm_state", 1, &template_match::armCB,
-                         this);  //接收点云
-
-  trans_pub = nh.advertise<bpmsg::pose>("/goal_translation", 30);
-
   ros::param::get("~min_x", min_x);
   ros::param::get("~min_y", min_y);
   ros::param::get("~min_z", min_z);
@@ -59,12 +52,33 @@ void template_match::init() {
   ros::param::get("~min_num", min_num);
   ros::param::get("~view_on", view_on);
   ros::param::get("~model_file_", model_file_);
+  ros::param::get("~model_file_1", model_file_1);
   ros::param::get("~model_file_2", model_file_2);
   ros::param::get("~simulation", simulation);
-  this->model_pipe = PointCloud::Ptr(new PointCloud);
-  pcl::io::loadPCDFile(model_file_, *model_pipe);
+  ros::param::get("~vision_simulation", vision_simulation);
+  if (simulation && vision_simulation) {
+    bat_sub = nh.subscribe("/kinect2/hd/points", 1, &template_match::cloudCB,
+                           this);  //接收点云
+  } else if (simulation && !vision_simulation) {
+    bat_sub = nh.subscribe("/camera/depth/points", 1, &template_match::cloudCB,
+                           this);  //接收点云
+  } else if (!simulation) {
+    bat_sub = nh.subscribe("/kinect2/hd/points", 1, &template_match::cloudCB,
+                           this);  //接收点云
+  }
+
+  arm_sub = nh.subscribe("/arm_state", 1, &template_match::armCB,
+                         this);  //接收点云
+
+  trans_pub = nh.advertise<bpmsg::pose>("/goal_translation", 30);
   this->model_cylinder = PointCloud::Ptr(new PointCloud);
   pcl::io::loadPCDFile(model_file_2, *model_cylinder);
+  this->model_pipe = PointCloud::Ptr(new PointCloud);
+  if (simulation) {
+    pcl::io::loadPCDFile(model_file_1, *model_pipe);
+  } else {
+    pcl::io::loadPCDFile(model_file_, *model_pipe);
+  }
   pcl::PointXYZ pipe_minpt, pipe_maxpt, cy_minpt, cy_maxpt;
   pcl::getMinMax3D(*model_pipe, pipe_minpt, pipe_maxpt);
   // pcl::getMinMax3D(*model_cylinder, cy_minpt, cy_maxpt);
@@ -140,18 +154,21 @@ void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
   pass.setFilterLimits(min_z, max_z);   //设置在过滤字段的范围
   pass.setFilterLimitsNegative(false);  //保留还是过滤掉范围内的点
   pass.filter(*cloud_filtered);
-  std::cout << "before: The points data:  " << cloud_filtered->points.size()
-            << std::endl;
-  const float voxel_grid_size = 0.005f;
-  pcl::VoxelGrid<pcl::PointXYZ> vox_grid;
-  vox_grid.setInputCloud(cloud_filtered);
-  vox_grid.setLeafSize(voxel_grid_size, voxel_grid_size, voxel_grid_size);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr tempCloud(
-      new pcl::PointCloud<pcl::PointXYZ>);
-  vox_grid.filter(*tempCloud);
-  cloud_filtered = tempCloud;
-  std::cout << "after: The points data:  " << cloud_filtered->points.size()
-            << std::endl;
+  // when gazebo simulation, not filter
+  if (!simulation) {
+    std::cout << "before: The points data:  " << cloud_filtered->points.size()
+              << std::endl;
+    const float voxel_grid_size = 0.005f;
+    pcl::VoxelGrid<pcl::PointXYZ> vox_grid;
+    vox_grid.setInputCloud(cloud_filtered);
+    vox_grid.setLeafSize(voxel_grid_size, voxel_grid_size, voxel_grid_size);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr tempCloud(
+        new pcl::PointCloud<pcl::PointXYZ>);
+    vox_grid.filter(*tempCloud);
+    cloud_filtered = tempCloud;
+    std::cout << "after: The points data:  " << cloud_filtered->points.size()
+              << std::endl;
+  }
   if (view_on) {
     // showCloud(cloud_filtered, mycloud);
     showCloud(cloud_filtered, mycloud);
@@ -165,8 +182,8 @@ void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
   // cluster(mycloud);
   // trans_pub.publish(result_pose);
 
-  // if arm is waiting for picking or fail in picking, the program will continue
-  // detectingcom_flag
+  // if arm is waiting for picking or fail in picking, the program will
+  // continue detectingcom_flag
   if ((arm_state == 0 || arm_state == 2) && cloud_filtered->points.size() &&
       !com_flag) {
     std::cout << "The points data:  " << cloud_filtered->points.size()
@@ -177,7 +194,7 @@ void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
     cluster(cloud_filtered, mycloud);
     // match(cloud_filtered, mycloud);
   }
-  if (simulation) {
+  if (vision_simulation) {
     std::cout << "Simulation!!!!The points data:  "
               << cloud_filtered->points.size() << std::endl;
     arm_state = 0;
@@ -360,7 +377,8 @@ void template_match::match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal,
     //   // target_vector(0)); result_pose.target_angle[1] =
     //   atan(target_vector(0)
     //   // / target_vector(1)); result_pose.target_angle[2] =
-    //   //     atan(sqrt(pow(target_vector(0), 2) + pow(target_vector(1), 2)) /
+    //   //     atan(sqrt(pow(target_vector(0), 2) + pow(target_vector(1), 2))
+    //   /
     //   //          target_vector(2));
     //   target_angle[index] = Eigen::Matrix<float, 3, 1>(
     //       atan(target_vector(1) / target_vector(0)),
@@ -382,8 +400,8 @@ void template_match::match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal,
         }
         for (int i = 0; i < 3; i++) {
           result_pose.target_pos[i] = this->target_pos(i, 0);
-          // result_pose.target_angle[2 - i] = this->euler_angles.transpose()(0,
-       i);
+          // result_pose.target_angle[2 - i] =
+       this->euler_angles.transpose()(0, i);
         }
         result_pose.object_num = goals.size();
         if (goals.size())

@@ -10,13 +10,13 @@
         <param name="pregrasp_y"            value="-0.17"/>
         <param name="pregrasp_z"            value="0.28"/>
          <param name="grasp_x"            value="0.07"/>
-         <param name="grasp_y"            value="0.3"/>
+         <param name="grasp_y"            value="0"/>
          <param name="hor_grasp_z"            value="-0.009"/>
          <param name="ver_grasp_z"            value="-0.005"/>
          <param name="hor_ratio"            value="0.4"/>
          <param name="ver_ratio"            value="0.4"/>
          <param name="change_angle"            value="0"/>
-        <param name="real_z"            value="0.15"/>
+        <param name="real_z"            value="-0.18"/>
         <param name="simulation"            value="0"/>
         
          <!-- 0.06 -0.012-->
