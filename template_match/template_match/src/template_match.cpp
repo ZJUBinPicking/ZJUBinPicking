@@ -140,6 +140,18 @@ void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
   pass.setFilterLimits(min_z, max_z);   //设置在过滤字段的范围
   pass.setFilterLimitsNegative(false);  //保留还是过滤掉范围内的点
   pass.filter(*cloud_filtered);
+  std::cout << "before: The points data:  " << cloud_filtered->points.size()
+            << std::endl;
+  const float voxel_grid_size = 0.005f;
+  pcl::VoxelGrid<pcl::PointXYZ> vox_grid;
+  vox_grid.setInputCloud(cloud_filtered);
+  vox_grid.setLeafSize(voxel_grid_size, voxel_grid_size, voxel_grid_size);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr tempCloud(
+      new pcl::PointCloud<pcl::PointXYZ>);
+  vox_grid.filter(*tempCloud);
+  cloud_filtered = tempCloud;
+  std::cout << "after: The points data:  " << cloud_filtered->points.size()
+            << std::endl;
   if (view_on) {
     // showCloud(cloud_filtered, mycloud);
     showCloud(cloud_filtered, mycloud);

@@ -102,7 +102,7 @@ void GraspingDemo::posCb(bpmsg::pose msg) {
     //           << std::endl;
     this->target_pos.push_back(obj_robot_frame.getX());
     this->target_pos.push_back(obj_robot_frame.getY());
-    this->target_pos.push_back(obj_robot_frame.getZ());
+    this->target_pos.push_back(obj_robot_frame.getZ() - 0.2);
     this->pick_index = msg.target_index;
     this->target_num = msg.object_num;
     this->detect_state = msg.if_detect;
