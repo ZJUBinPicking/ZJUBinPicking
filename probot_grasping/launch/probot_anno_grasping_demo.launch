@@ -17,7 +17,7 @@
          <param name="ver_ratio"            value="0.4"/>
          <param name="change_angle"            value="0"/>
         <param name="real_z"            value="0.15"/>
-        <param name="simulation"            value="0"/>
+        <param name="simulation"            value="1"/>
         
          <!-- 0.06 -0.012-->
     </node>

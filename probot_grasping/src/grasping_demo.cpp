@@ -93,9 +93,9 @@ void GraspingDemo::posCb(bpmsg::pose msg) {
 
       obj_robot_frame = camera_to_robot_ * obj_camera_frame;
     } else {
-      obj_camera_frame.setZ(-msg.target_pos[2] + 0.6564257 + 0.2);
-      obj_camera_frame.setY(-msg.target_pos[0] + 0.005388);
-      obj_camera_frame.setX(-msg.target_pos[1] + 0.113704 + 0.25);
+      obj_camera_frame.setZ(-msg.target_pos[2] + 0.67 + grasp_y);
+      obj_camera_frame.setY(msg.target_pos[0] + 0 - 0.03);
+      obj_camera_frame.setX(msg.target_pos[1] + 0.23);
       obj_robot_frame = obj_camera_frame;
     }
     grasp_running = true;
@@ -111,6 +111,7 @@ void GraspingDemo::posCb(bpmsg::pose msg) {
     this->target_pos.push_back(obj_robot_frame.getX());
     this->target_pos.push_back(obj_robot_frame.getY());
     this->target_pos.push_back(obj_robot_frame.getZ() - real_z);  // -0.15
+    // cout << "gety" << obj_camera_frame.getY() << endl;
     // } else {
     //   this->target_pos.push_back(-msg.target_pos[1] + 0.113704 + 0.25);
     //   this->target_pos.push_back(-msg.target_pos[0] + 0.005388);
@@ -212,9 +213,11 @@ void GraspingDemo::attainObject() {
   // ROS_INFO("The attain Object function called");
   // if (target_pos[1] > -0.09 && target_pos[1] < 0.078) {
   ROS_ERROR("!!!!posx %f posy %f posz %f", target_pos[0], target_pos[1],
-            target_pos[2] + grasp_y);
-  attainPosition(target_pos[0], target_pos[1], target_pos[2] + grasp_y);
-
+            target_pos[2]);
+  if (simulation)
+    attainPosition(target_pos[0], target_pos[1], target_pos[2] + grasp_y);
+  else
+    attainPosition(target_pos[0], target_pos[1], target_pos[2]);
   // Open Gripper
   ros::WallDuration(0.5).sleep();
   grippergroup.setNamedTarget("open");
@@ -403,8 +406,8 @@ void GraspingDemo::lift() {
   //   joint_value[0] = CV_PI / 6;
   int k = joint_value[0] / CV_PI;
   double res = joint_value[0] - k * CV_PI;
-  res > 0 ? joint_value[0] = k * CV_PI + CV_PI / 6
-          : joint_value[0] = k * CV_PI - CV_PI / 6;
+  res > 0 ? joint_value[0] = k * CV_PI + CV_PI / 5
+          : joint_value[0] = k * CV_PI - CV_PI / 5;
 
   // joint_value[0] > 0 ? joint_value[0] = CV_PI / 6 : joint_value[0] = -CV_PI /
   // 6;

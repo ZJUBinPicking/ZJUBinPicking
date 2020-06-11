@@ -135,6 +135,7 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(serial_node_angle src/serial_node_angle.cpp)
+add_executable(ik src/actuator.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -150,7 +151,9 @@ add_executable(serial_node_angle src/serial_node_angle.cpp)
 target_link_libraries(serial_node_angle
    ${catkin_LIBRARIES}
  )
-
+target_link_libraries(ik
+   ${catkin_LIBRARIES}
+ )
 #############
 ## Install ##
 #############

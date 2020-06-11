@@ -1,0 +1,11 @@
+<launch>
+	<node pkg="serial_trans" type="serial_node_angle" name="serial_node_angle" output="screen">
+	</node>
+
+	<node pkg="serial_trans" type="ik" name="ik" output="screen">
+	</node>
+    
+      <node pkg="rosserial_python" name="serial_node" type="serial_node.py" output="screen">
+
+    </node>
+</launch>
