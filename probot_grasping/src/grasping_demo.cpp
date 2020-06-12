@@ -212,7 +212,7 @@ void GraspingDemo::attainPosition(float x, float y, float z) {
 void GraspingDemo::attainObject() {
   // ROS_INFO("The attain Object function called");
   // if (target_pos[1] > -0.09 && target_pos[1] < 0.078) {
-  ROS_ERROR("!!!!posx %f posy %f posz %f", target_pos[0], target_pos[1],
+  ROS_ERROR("!!!!posx %f  posy %f posz %f", target_pos[0], target_pos[1],
             target_pos[2]);
   if (simulation)
     attainPosition(target_pos[0], target_pos[1], target_pos[2] + grasp_y);
