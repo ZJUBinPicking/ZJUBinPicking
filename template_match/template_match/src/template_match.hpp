@@ -226,7 +226,7 @@ class TemplateAlignment {
 class template_match {
  public:
   double min_x, min_y, min_z, max_x, max_y, max_z;
-  double model_size;
+  double model_size, voxel_grid_size;
   int object_index = 0;
   double theta, dx, dy, dz;
   int arm_state;

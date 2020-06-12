@@ -56,6 +56,7 @@ void template_match::init() {
   ros::param::get("~model_file_2", model_file_2);
   ros::param::get("~simulation", simulation);
   ros::param::get("~vision_simulation", vision_simulation);
+  ros::param::get("~voxel_grid_size", voxel_grid_size);
   if (simulation && vision_simulation) {
     bat_sub = nh.subscribe("/kinect2/hd/points", 1, &template_match::cloudCB,
                            this);  //接收点云
@@ -86,15 +87,20 @@ void template_match::init() {
   // cout << "pipe max" << pipe_maxpt << endl;
   // cout << "cylinder min" << cy_minpt << endl;
   // cout << "cylinder max" << cy_maxpt << endl;
-
-  origin_pos << 0.008, 0.015, 0.016, 1;
+  // 0.034 0.031 0.031
+  // 0.005041 0.026258 0.030
+  // 0.028836 0.029025 0
+  // 0.005027 0.031329 0.005167
+  // 0.029 0.031 0.062
+  // 0.005164 0.029025 0.062
+  origin_pos << 0.0195205, 0.028629, 0.0305, 1;
   origin_angle << 0, 0, 1;
 
   Eigen::Matrix<float, 4, 1> temp;
-  temp << 0.008, 0.015, 0.030, 1;
+  temp << 0.0169315, 0.030177, 0.0025835, 1;
   grasp_pos.push_back(temp);
   Eigen::Matrix<float, 4, 1> temp2;
-  temp2 << 0.008, 0.014, 0, 1;
+  temp2 << 0.017082, 0.030, 0.062, 1;
   grasp_pos.push_back(temp2);
   cout << origin_pos << endl;
   cout << origin_angle << endl;
@@ -158,7 +164,7 @@ void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
   if (!simulation) {
     std::cout << "before: The points data:  " << cloud_filtered->points.size()
               << std::endl;
-    const float voxel_grid_size = 0.005f;
+    // const float voxel_grid_size = 0.005f;
     pcl::VoxelGrid<pcl::PointXYZ> vox_grid;
     vox_grid.setInputCloud(cloud_filtered);
     vox_grid.setLeafSize(voxel_grid_size, voxel_grid_size, voxel_grid_size);

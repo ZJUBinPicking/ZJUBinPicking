@@ -14,6 +14,7 @@
 	<param name="dx"  type="double" value="0"/>
 	<param name="dy"  type="double" value="0"/>
 	<param name="dz"  type="double" value="-180"/>
+	<param name="voxel_grid_size"  type="double" value="0.003"/>
 	<param name="max_num"  type="int" value="20000"/>
 	<param name="min_num"  type="int" value="80"/>
 	<param name="view_on"  type="bool" value="0"/>
