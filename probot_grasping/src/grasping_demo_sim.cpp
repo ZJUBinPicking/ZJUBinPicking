@@ -211,122 +211,124 @@ void GraspingDemo::attainPosition(float x, float y, float z) {
 // right 0.297365 0.0792279
 void GraspingDemo::attainObject() {
   // ROS_INFO("The attain Object function called");
-  // if (target_pos[1] > -0.09 && target_pos[1] < 0.078) {
-  ROS_ERROR("!!!!posx %f  posy %f posz %f", target_pos[0], target_pos[1],
-            target_pos[2]);
-  if (simulation)
-    attainPosition(target_pos[0], target_pos[1], target_pos[2] + grasp_y);
-  else
-    attainPosition(target_pos[0], target_pos[1], target_pos[2]);
-  // Open Gripper
-  ros::WallDuration(0.5).sleep();
-  grippergroup.setNamedTarget("open");
-  grippergroup.move();
+  if (target_pos[1] > -0.09 && target_pos[1] < 0.078) {
+    ROS_ERROR("!!!!posx %f  posy %f posz %f", target_pos[0], target_pos[1],
+              target_pos[2]);
+    if (simulation)
+      attainPosition(target_pos[0], target_pos[1], target_pos[2] + grasp_y);
+    else
+      attainPosition(target_pos[0], target_pos[1], target_pos[2]);
+    // Open Gripper
+    ros::WallDuration(0.5).sleep();
+    grippergroup.setNamedTarget("open");
+    grippergroup.move();
 
-  // Slide down the Object
-  geometry_msgs::PoseStamped currPose = armgroup.getCurrentPose();
-  geometry_msgs::Pose target_pose1;
-  geometry_msgs::Quaternion target_angle1;
+    // Slide down the Object
+    geometry_msgs::PoseStamped currPose = armgroup.getCurrentPose();
+    geometry_msgs::Pose target_pose1;
+    geometry_msgs::Quaternion target_angle1;
 
-  tf::Quaternion quat;
-  tf::quaternionMsgToTF(armgroup.getCurrentPose().pose.orientation, quat);
+    tf::Quaternion quat;
+    tf::quaternionMsgToTF(armgroup.getCurrentPose().pose.orientation, quat);
 
-  double roll, pitch, yaw;                       //定义存储r\p\y的容器
-  tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);  //进行转换
-  tf2::Quaternion orientation;
-  // target_angle[2] = target_angle[2];
-  // if (abs(target_angle[2]) > 1.57) {
-  //   ROS_WARN("big!!!!! ");
-  //   if (target_angle[2] > 0)
-  //     target_angle[2] = target_angle[2] - 3.1415926;
-  //   else if (target_angle[2] < 0)
-  //     target_angle[2] = target_angle[2] + 3.1415926;
-  // }
+    double roll, pitch, yaw;                       //定义存储r\p\y的容器
+    tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);  //进行转换
+    tf2::Quaternion orientation;
+    // target_angle[2] = target_angle[2];
+    // if (abs(target_angle[2]) > 1.57) {
+    //   ROS_WARN("big!!!!! ");
+    //   if (target_angle[2] > 0)
+    //     target_angle[2] = target_angle[2] - 3.1415926;
+    //   else if (target_angle[2] < 0)
+    //     target_angle[2] = target_angle[2] + 3.1415926;
+    // }
 
-  orientation.setRPY(1.57, 1.57, -target_angle[0]);
-  ROS_WARN("angle info : %f, %f,%f", 1.57, 1.57, -target_angle[0]);
-  target_pose1.orientation.x = orientation.getX();
-  target_pose1.orientation.y = orientation.getY();
-  target_pose1.orientation.z = orientation.getZ();
-  target_pose1.orientation.w = orientation.getW();
+    orientation.setRPY(1.57, 1.57, -target_angle[0]);
+    ROS_WARN("angle info : %f, %f,%f", 1.57, 1.57, -target_angle[0]);
+    target_pose1.orientation.x = orientation.getX();
+    target_pose1.orientation.y = orientation.getY();
+    target_pose1.orientation.z = orientation.getZ();
+    target_pose1.orientation.w = orientation.getW();
 
-  // target_pose1.Quaternion = target_angle;
-  target_pose1.position = currPose.pose.position;
-  // target_pose1.position.z = obj_robot_frame.getZ() - hor_grasp_z;
-  if (fabs(fabs(target_angle[2]) - 1.5) < hor_ratio) {
-    target_pose1.position.z = obj_robot_frame.getZ() - hor_grasp_z;
-    ROS_WARN("HOR");
-  } else if (fabs(fabs(target_angle[2]) - 0.4) < ver_ratio) {
+    // target_pose1.Quaternion = target_angle;
+    target_pose1.position = currPose.pose.position;
+    // target_pose1.position.z = obj_robot_frame.getZ() - hor_grasp_z;
+    if (fabs(fabs(target_angle[2]) - 1.5) < hor_ratio) {
+      target_pose1.position.z = obj_robot_frame.getZ() - hor_grasp_z;
+      ROS_WARN("HOR");
+    } else if (fabs(fabs(target_angle[2]) - 0.4) < ver_ratio) {
+      target_pose1.position.z = obj_robot_frame.getZ() - ver_grasp_z;
+      ROS_WARN("VER");
+    } else
+      target_pose1.position.z =
+          obj_robot_frame.getZ() - (ver_grasp_z + hor_grasp_z) / 2;
+
+    // cout << "grasp_z" << grasp_z << endl;
+    armgroup.setPoseTarget(target_pose1);
+    armgroup.move();
+  } else {
+    ROS_WARN("side!!!!!!!!");
+    double temp;
+    if (target_pos[1] < -0.09)
+      temp = -0.04;
+    else
+      temp = 0.04;
+    attainPosition(target_pos[0], temp, target_pos[2] + grasp_y * 3 / 4);
+    ros::WallDuration(0.5).sleep();
+    grippergroup.setNamedTarget("open");
+    grippergroup.move();
+    geometry_msgs::PoseStamped currPose = armgroup.getCurrentPose();
+    geometry_msgs::Pose target_pose1;
+    geometry_msgs::Quaternion target_angle1;
+
+    // tf::Quaternion quat;
+    // tf::quaternionMsgToTF(armgroup.getCurrentPose().pose.orientation, quat);
+
+    // double roll, pitch, yaw;                       //定义存储r\p\y的容器
+    // tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);  //进行转换
+    tf2::Quaternion orientation;
+    // vector<double> joint_value(6);
+    // joint_value = armgroup.getCurrentJointValues();
+    // temp > 0 ? joint_value[3] = joint_value[3] + CV_PI / 8
+    //          : joint_value[3] = joint_value[3] - CV_PI / 8;
+    // armgroup.setJointValueTarget(joint_value);
+    // armgroup.move();
+
+    // target_angle[2] = target_angle[2];
+    // if (abs(target_angle[2]) > 1.57) {
+    //   ROS_WARN("big!!!!! ");
+    //   if (target_angle[2] > 0)
+    //     target_angle[2] = target_angle[2] - 3.1415926;
+    //   else if (target_angle[2] < 0)
+    //     target_angle[2] = target_angle[2] + 3.1415926;
+    // }
+    currPose = armgroup.getCurrentPose();
+    orientation.setRPY(1.57, 2.4, 1.57);
+    ROS_WARN("angle info : %f, %f,%f", 1.57, target_angle[1], target_angle[0]);
+    target_pose1.orientation.x = orientation.getX();
+    target_pose1.orientation.y = orientation.getY();
+    target_pose1.orientation.z = orientation.getZ();
+    target_pose1.orientation.w = orientation.getW();
+    // target_pose1.position = armgroup.getCurrentPose().pose.position;
+    // target_pose1.orientation = currPose.pose.orientation;
+    target_pose1.position.x = obj_robot_frame.getX();
+    target_pose1.position.y = obj_robot_frame.getY() + 0.006;
     target_pose1.position.z = obj_robot_frame.getZ() - ver_grasp_z;
-    ROS_WARN("VER");
-  } else
-    target_pose1.position.z =
-        obj_robot_frame.getZ() - (ver_grasp_z + hor_grasp_z) / 2;
+    // target_pose1.position.z = obj_robot_frame.getZ() - hor_grasp_z;
+    // if (fabs(fabs(target_angle[2]) - 1.5) < hor_ratio) {
+    //   target_pose1.position.z = obj_robot_frame.getZ() - hor_grasp_z;
+    //   ROS_WARN("HOR");
+    // } else if (fabs(fabs(target_angle[2]) - 0.4) < ver_ratio) {
+    //   target_pose1.position.z = obj_robot_frame.getZ() - ver_grasp_z;
+    //   ROS_WARN("VER");
+    // } else
+    //   target_pose1.position.z =
+    //       obj_robot_frame.getZ() - (ver_grasp_z + hor_grasp_z) / 2;
 
-  // cout << "grasp_z" << grasp_z << endl;
-  armgroup.setPoseTarget(target_pose1);
-  armgroup.move();
-  // } else {
-  //   ROS_WARN("side!!!!!!!!");
-  //   double temp;
-  //   if (target_pos[1] < -0.09)
-  //     temp = -0.07;
-  //   else
-  //     temp = 0.06;
-  //   attainPosition(target_pos[0], temp, target_pos[2] + grasp_y);
-  //   ros::WallDuration(0.5).sleep();
-  //   grippergroup.setNamedTarget("open");
-  //   grippergroup.move();
-  //   geometry_msgs::PoseStamped currPose = armgroup.getCurrentPose();
-  //   geometry_msgs::Pose target_pose1;
-  //   geometry_msgs::Quaternion target_angle1;
-
-  //   tf::Quaternion quat;
-  //   tf::quaternionMsgToTF(armgroup.getCurrentPose().pose.orientation, quat);
-
-  //   double roll, pitch, yaw;                       //定义存储r\p\y的容器
-  //   tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);  //进行转换
-  //   tf2::Quaternion orientation;
-  //   vector<double> joint_value(6);
-  //   joint_value = armgroup.getCurrentJointValues();
-  //   joint_value[3] = joint_value[3] + CV_PI / 6;
-  //   armgroup.setJointValueTarget(joint_value);
-  //   armgroup.move();
-  //   // target_angle[2] = target_angle[2];
-  //   // if (abs(target_angle[2]) > 1.57) {
-  //   //   ROS_WARN("big!!!!! ");
-  //   //   if (target_angle[2] > 0)
-  //   //     target_angle[2] = target_angle[2] - 3.1415926;
-  //   //   else if (target_angle[2] < 0)
-  //   //     target_angle[2] = target_angle[2] + 3.1415926;
-  //   // }
-
-  //   // orientation.setRPY(1.57, 1.57 + temp, yaw);
-  //   // ROS_WARN("angle info : %f, %f,%f", 1.57, 1.57 + temp, yaw);
-  //   // target_pose1.orientation.x = orientation.getX();
-  //   // target_pose1.orientation.y = orientation.getY();
-  //   // target_pose1.orientation.z = orientation.getZ();
-  //   // target_pose1.orientation.w = orientation.getW();
-  //   // target_pose1.position = armgroup.getCurrentPose().pose.position;
-  //   // target_pose1.Quaternion = target_angle;
-  //   // target_pose1.position.x = target_pos[0];
-  //   // target_pose1.position.y = target_pos[1];
-  //   // target_pose1.position.z = target_pos[2];
-  //   // target_pose1.position.z = obj_robot_frame.getZ() - hor_grasp_z;
-  //   // if (fabs(fabs(target_angle[2]) - 1.5) < hor_ratio) {
-  //   //   target_pose1.position.z = obj_robot_frame.getZ() - hor_grasp_z;
-  //   //   ROS_WARN("HOR");
-  //   // } else if (fabs(fabs(target_angle[2]) - 0.4) < ver_ratio) {
-  //   //   target_pose1.position.z = obj_robot_frame.getZ() - ver_grasp_z;
-  //   //   ROS_WARN("VER");
-  //   // } else
-  //   //   target_pose1.position.z =
-  //   //       obj_robot_frame.getZ() - (ver_grasp_z + hor_grasp_z) / 2;
-
-  //   // cout << "grasp_z" << grasp_z << endl;
-  //   // armgroup.setPoseTarget(target_pose1);
-  //   // armgroup.move();
-  // }
+    // cout << "grasp_z" << grasp_z << endl;
+    armgroup.setPoseTarget(target_pose1);
+    armgroup.move();
+  }
 }
 
 void GraspingDemo::grasp() {
@@ -519,8 +521,8 @@ int main(int argc, char **argv) {
   ros::param::get("~ver_ratio", simGrasp.ver_ratio);
   ros::param::get("~real_z", simGrasp.real_z);
   ros::param::get("~simulation", simGrasp.simulation);
-  ROS_WARN("grasp info : %f, %f,%f", simGrasp.grasp_x, simGrasp.grasp_y,
-           simGrasp.ver_grasp_z);
+  // ROS_WARN("grasp info : %f, %f,%f", simGrasp.grasp_x, simGrasp.grasp_y,
+  //          simGrasp.ver_grasp_z);
   ROS_INFO_STREAM("Waiting for five seconds..");
 
   // ros::WallDuration(5.0).sleep();

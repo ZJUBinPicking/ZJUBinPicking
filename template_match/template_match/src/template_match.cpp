@@ -93,15 +93,27 @@ void template_match::init() {
   // 0.005027 0.031329 0.005167
   // 0.029 0.031 0.062
   // 0.005164 0.029025 0.062
-  origin_pos << 0.0195205, 0.028629, 0.0305, 1;
-  origin_angle << 0, 0, 1;
+  if (simulation) {
+    origin_pos << 0.008, 0.015, 0.016, 1;
+    origin_angle << 0, 0, 1;
 
-  Eigen::Matrix<float, 4, 1> temp;
-  temp << 0.0169315, 0.030177, 0.0025835, 1;
-  grasp_pos.push_back(temp);
-  Eigen::Matrix<float, 4, 1> temp2;
-  temp2 << 0.017082, 0.030, 0.062, 1;
-  grasp_pos.push_back(temp2);
+    Eigen::Matrix<float, 4, 1> temp;
+    temp << 0.008, 0.015, 0.030, 1;
+    grasp_pos.push_back(temp);
+    Eigen::Matrix<float, 4, 1> temp2;
+    temp2 << 0.008, 0.014, 0, 1;
+    grasp_pos.push_back(temp2);
+  } else {
+    origin_pos << 0.0195205, 0.028629, 0.0305, 1;
+    origin_angle << 0, 0, 1;
+
+    Eigen::Matrix<float, 4, 1> temp;
+    temp << 0.0169315, 0.030177, 0.0025835, 1;
+    grasp_pos.push_back(temp);
+    Eigen::Matrix<float, 4, 1> temp2;
+    temp2 << 0.017082, 0.030, 0.062, 1;
+    grasp_pos.push_back(temp2);
+  }
   cout << origin_pos << endl;
   cout << origin_angle << endl;
   // ros::spinOnce();
@@ -370,7 +382,7 @@ void template_match::match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal,
     //          target_vector(2));
     target_angle_ = Eigen::Matrix<float, 3, 1>(
         atan(target_vector(1) / target_vector(0)),
-        atan(target_vector(0) / target_vector(1)),
+        atan(target_vector(2) / target_vector(0)),
         atan(sqrt(pow(target_vector(0), 2) + pow(target_vector(1), 2)) /
              target_vector(2)));
     target_angle.push_back(target_angle_);

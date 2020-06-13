@@ -1,12 +1,12 @@
 <launch>
 	<node pkg="template_match" type="template_match" name="template_match" output="screen">
 	<!-- red -->
-	<param name="min_x"  type="double" value="-0.09"/>
+	<param name="min_x"  type="double" value="-0.105"/>
 	<!-- green -->
 	<param name="min_y"  type="double" value="-0.118"/>
 	<!-- blue -->
 	<param name="min_z"  type="double" value="0.55"/>
-	<param name="max_x"  type="double" value="0.102"/>
+	<param name="max_x"  type="double" value="0.118"/>
 	<param name="max_y"  type="double" value="0.072"/>
 	<param name="max_z"  type="double" value="0.6"/>
 	<param name="model_size"  type="double" value="0.005"/>
