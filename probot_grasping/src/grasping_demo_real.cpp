@@ -94,7 +94,7 @@ void GraspingDemo::posCb(bpmsg::pose msg) {
       obj_robot_frame = camera_to_robot_ * obj_camera_frame;
     } else {
       obj_camera_frame.setZ(-msg.target_pos[2] + 0.67 + grasp_y);
-      obj_camera_frame.setY(msg.target_pos[0] + 0 - 0.03);
+      obj_camera_frame.setY(msg.target_pos[0] + 0);
       obj_camera_frame.setX(msg.target_pos[1] + 0.23);
       obj_robot_frame = obj_camera_frame;
     }

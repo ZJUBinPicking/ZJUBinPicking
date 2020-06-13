@@ -27,7 +27,7 @@ void ArmCallback(const control_msgs::FollowJointTrajectoryActionGoal& msg) {
         msg.goal.trajectory.points[i].positions[4] * 125 * 180 / (2 * PI);
     position_msg.data.at(5) =
         msg.goal.trajectory.points[i].positions[5] * 200 * 180 / (9 * PI);
-    position_msg.data.at(6) = 200.0;
+    position_msg.data.at(6) = 600.0;
     pos_msg.push_back(position_msg);
 
     ROS_INFO("joint 1: %f", msg.goal.trajectory.points[i].positions[0]);
