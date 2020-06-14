@@ -29,6 +29,7 @@
 typedef pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
     PCLHandler;
 #include <math.h>
+#include <pcl/features/moment_of_inertia_estimation.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/registration/icp.h>
@@ -257,6 +258,7 @@ class template_match {
 
   // pcl::PointCloud<PointT>::Ptr cloud_;
   map<int, double> height_map;
+  map<int, double> height_map_side;
   vector<pcl::PointCloud<PointT>::Ptr> goals;
   // vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> t_cloud;
   std::vector<FeatureCloud> object_templates;
@@ -279,5 +281,6 @@ class template_match {
       double dy, double dz);
   Eigen::Matrix4f icp(pcl::PointCloud<PointT>::Ptr cloud_in,
                       pcl::PointCloud<PointT>::Ptr cloud_out);
+  void box(pcl::PointCloud<PointT>::Ptr cloud);
 };
 #endif

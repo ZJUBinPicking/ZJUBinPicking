@@ -93,6 +93,8 @@ void template_match::init() {
   // 0.005027 0.031329 0.005167
   // 0.029 0.031 0.062
   // 0.005164 0.029025 0.062
+  // 0.005041 0.002501 0.030422
+  // 0.028959 0.005002 0.030835
   if (simulation) {
     origin_pos << 0.008, 0.015, 0.016, 1;
     origin_angle << 0, 0, 1;
@@ -113,9 +115,13 @@ void template_match::init() {
     Eigen::Matrix<float, 4, 1> temp2;
     temp2 << 0.017082, 0.030, 0.062, 1;
     grasp_pos.push_back(temp2);
+    Eigen::Matrix<float, 4, 1> temp3;
+    temp3 << 0.017082, 0.00375, 0.03, 1;
+    grasp_pos.push_back(temp3);
   }
   cout << origin_pos << endl;
   cout << origin_angle << endl;
+  // box(model_cylinder);
   // ros::spinOnce();
 }
 
@@ -272,10 +278,16 @@ void template_match::cluster(pcl::PointCloud<PointT>::Ptr cloud_,
                    pow((min.z - max.z), 2);
       cout << temp << endl;
       // if (temp > 0.001825)
+      // box(cloud_cluster);
       match(cloud_cluster, cloud_2, model_pipe, j);
       // else
       //   match(cloud_cluster, cloud_2, model_cylinder, j);
-      height_map.insert(make_pair(j, target_pos[j](2)));
+      if (target_pos[j](0) <= -0.072 || target_pos[j](0) >= 0.0792) {
+        height_map_side.insert(make_pair(j, target_pos[j](2)));
+        ROS_ERROR("side object!!!!!");
+      } else {
+        height_map.insert(make_pair(j, target_pos[j](2)));
+      }
       j++;
     }
     cout << goals.size() << endl;
@@ -604,8 +616,12 @@ void template_match::mainloop() {
     ros::spinOnce();
     if (com_flag) {
       vector<pair<int, double> > vec(height_map.begin(), height_map.end());
+      vector<pair<int, double> > vec2(height_map_side.begin(),
+                                      height_map_side.end());
       //对线性的vector进行排序
       sort(vec.begin(), vec.end(), cmp);
+      sort(vec2.begin(), vec2.end(), cmp);
+      vec.insert(vec.end(), vec2.begin(), vec2.end());
       for (int j = 0; j < vec.size(); ++j) {
         // cout << vec[j].first << "  " << vec[j].second << endl;
         ROS_WARN("vec index: %d vec height: %f", vec[j].first, vec[j].second);
@@ -626,6 +642,7 @@ void template_match::mainloop() {
         }
       }
       height_map.clear();
+      height_map_side.clear();
       target_angle.clear();
       target_pos.clear();
       com_flag = 0;
@@ -638,4 +655,84 @@ void template_match::mainloop() {
     // transclouds(this->model_, this->theta, this->dx, this->dy, this->dz);
     // loop_rate_class.sleep();
   }
+}
+void template_match::box(pcl::PointCloud<PointT>::Ptr cloud) {
+  pcl::MomentOfInertiaEstimation<pcl::PointXYZ> feature_extractor;
+  feature_extractor.setInputCloud(cloud);
+  feature_extractor.compute();
+
+  std::vector<float> moment_of_inertia;
+  std::vector<float> eccentricity;
+  pcl::PointXYZ min_point_AABB;
+  pcl::PointXYZ max_point_AABB;
+  pcl::PointXYZ min_point_OBB;
+  pcl::PointXYZ max_point_OBB;
+  pcl::PointXYZ position_OBB;
+  Eigen::Matrix3f rotational_matrix_OBB;
+  float major_value, middle_value, minor_value;
+  Eigen::Vector3f major_vector, middle_vector, minor_vector;
+  Eigen::Vector3f mass_center;
+
+  // 获取惯性矩
+  feature_extractor.getMomentOfInertia(moment_of_inertia);
+  // 获取离心率
+  feature_extractor.getEccentricity(eccentricity);
+  // 获取AABB盒子
+  feature_extractor.getAABB(min_point_AABB, max_point_AABB);
+  // 获取OBB盒子
+  feature_extractor.getOBB(min_point_OBB, max_point_OBB, position_OBB,
+                           rotational_matrix_OBB);
+  feature_extractor.getEigenValues(major_value, middle_value, minor_value);
+  // 获取主轴major_vector，中轴middle_vector，辅助轴minor_vector
+  feature_extractor.getEigenVectors(major_vector, middle_vector, minor_vector);
+  // 获取质心
+  feature_extractor.getMassCenter(mass_center);
+
+  pcl::visualization::PCLVisualizer::Ptr viewer(
+      new pcl::visualization::PCLVisualizer("3D Viewer"));
+  viewer->setBackgroundColor(0, 0, 0);
+  viewer->addCoordinateSystem(1.0);
+  viewer->initCameraParameters();
+  viewer->addPointCloud<pcl::PointXYZ>(cloud, "sample cloud");
+  // 添加AABB包容盒
+  viewer->addCube(min_point_AABB.x, max_point_AABB.x, min_point_AABB.y,
+                  max_point_AABB.y, min_point_AABB.z, max_point_AABB.z, 1.0,
+                  1.0, 0.0, "AABB");
+  viewer->setShapeRenderingProperties(
+      pcl::visualization::PCL_VISUALIZER_REPRESENTATION,
+      pcl::visualization::PCL_VISUALIZER_REPRESENTATION_WIREFRAME, "AABB");
+
+  // 添加OBB包容盒
+  Eigen::Vector3f position(position_OBB.x, position_OBB.y, position_OBB.z);
+  Eigen::Quaternionf quat(rotational_matrix_OBB);
+  // position：中心位置
+  // quat：旋转矩阵
+  // max_point_OBB.x - min_point_OBB.x  宽度
+  // max_point_OBB.y - min_point_OBB.y  高度
+  // max_point_OBB.z - min_point_OBB.z  深度
+  viewer->addCube(position, quat, max_point_OBB.x - min_point_OBB.x,
+                  max_point_OBB.y - min_point_OBB.y,
+                  max_point_OBB.z - min_point_OBB.z, "OBB");
+  viewer->setShapeRenderingProperties(
+      pcl::visualization::PCL_VISUALIZER_REPRESENTATION,
+      pcl::visualization::PCL_VISUALIZER_REPRESENTATION_WIREFRAME, "OBB");
+
+  pcl::PointXYZ center(mass_center(0), mass_center(1), mass_center(2));
+  pcl::PointXYZ x_axis(major_vector(0) + mass_center(0),
+                       major_vector(1) + mass_center(1),
+                       major_vector(2) + mass_center(2));
+  pcl::PointXYZ y_axis(middle_vector(0) + mass_center(0),
+                       middle_vector(1) + mass_center(1),
+                       middle_vector(2) + mass_center(2));
+  pcl::PointXYZ z_axis(minor_vector(0) + mass_center(0),
+                       minor_vector(1) + mass_center(1),
+                       minor_vector(2) + mass_center(2));
+  viewer->addLine(center, x_axis, 1.0f, 0.0f, 0.0f, "major eigen vector");
+  viewer->addLine(center, y_axis, 0.0f, 1.0f, 0.0f, "middle eigen vector");
+  viewer->addLine(center, z_axis, 0.0f, 0.0f, 1.0f, "minor eigen vector");
+
+  while (!viewer->wasStopped()) {
+    viewer->spinOnce(100);
+    // boost::this_thread::sleep(boost::posix_time::microseconds(100000));
+  };
 }

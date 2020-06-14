@@ -211,7 +211,7 @@ void GraspingDemo::attainPosition(float x, float y, float z) {
 // right 0.297365 0.0792279
 void GraspingDemo::attainObject() {
   // ROS_INFO("The attain Object function called");
-  if (target_pos[1] > -0.09 && target_pos[1] < 0.078) {
+  if (target_pos[1] > -0.078 && target_pos[1] < 0.075) {
     ROS_ERROR("!!!!posx %f  posy %f posz %f", target_pos[0], target_pos[1],
               target_pos[2]);
     if (simulation)
@@ -266,10 +266,10 @@ void GraspingDemo::attainObject() {
     // cout << "grasp_z" << grasp_z << endl;
     armgroup.setPoseTarget(target_pose1);
     armgroup.move();
-  } else {
+  } else if (target_pos[1] <= -0.078 || target_pos[1] >= 0.075) {
     ROS_WARN("side!!!!!!!!");
     double temp;
-    if (target_pos[1] < -0.09)
+    if (target_pos[1] < -0.078)
       temp = -0.04;
     else
       temp = 0.04;
@@ -303,7 +303,8 @@ void GraspingDemo::attainObject() {
     //     target_angle[2] = target_angle[2] + 3.1415926;
     // }
     currPose = armgroup.getCurrentPose();
-    orientation.setRPY(1.57, 2.4, 1.57);
+    temp < 0 ? orientation.setRPY(1.57, 2.4, 1.57)
+             : orientation.setRPY(1.57, 0.67, 1.57);
     ROS_WARN("angle info : %f, %f,%f", 1.57, target_angle[1], target_angle[0]);
     target_pose1.orientation.x = orientation.getX();
     target_pose1.orientation.y = orientation.getY();
@@ -346,7 +347,13 @@ void GraspingDemo::lift() {
   geometry_msgs::PoseStamped currPose = armgroup.getCurrentPose();
   ros::WallDuration(0.5).sleep();
   geometry_msgs::Pose target_pose1;
-  target_pose1.orientation = currPose.pose.orientation;
+  tf2::Quaternion orientation;
+  currPose = armgroup.getCurrentPose();
+  orientation.setRPY(1.57, 1.57, 1.57);
+  target_pose1.orientation.x = orientation.getX();
+  target_pose1.orientation.y = orientation.getY();
+  target_pose1.orientation.z = orientation.getZ();
+  target_pose1.orientation.w = orientation.getW();
   target_pose1.position = currPose.pose.position;
 
   // Starting Postion after picking
