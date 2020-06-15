@@ -18,7 +18,8 @@
          <param name="change_angle"            value="0"/>
         <param name="real_z"            value="-0.08"/>
         <param name="simulation"            value="0"/>
-        
+        <param name="side_min"            value="-0.135"/>
+        <param name="side_max"            value="0.11"/>
          <!-- 0.06 -0.012-->
     </node>
 
