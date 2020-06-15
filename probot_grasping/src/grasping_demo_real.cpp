@@ -214,7 +214,7 @@ void GraspingDemo::attainObject() {
   // if (target_pos[1] > -0.09 && target_pos[1] < 0.078) {
   ROS_ERROR("!!!!posx %f  posy %f posz %f", target_pos[0], target_pos[1],
             target_pos[2]);
-  if (target_pos[1] > -0.078 && target_pos[1] < 0.075) {
+  if (target_pos[1] > -0.135 && target_pos[1] < 0.11) {
     if (simulation)
       attainPosition(target_pos[0], target_pos[1], target_pos[2] + grasp_y);
     else
@@ -273,10 +273,10 @@ void GraspingDemo::attainObject() {
     // cout << "grasp_z" << grasp_z << endl;
     armgroup.setPoseTarget(target_pose1);
     armgroup.move();
-  } else if (target_pos[1] <= -0.078 || target_pos[1] >= 0.075) {
+  } else if (target_pos[1] <= -0.135 || target_pos[1] >= 0.11) {
     ROS_WARN("side!!!!!!!!");
     double temp;
-    if (target_pos[1] < -0.078)
+    if (target_pos[1] < -0.13)
       temp = -0.04;
     else
       temp = 0.04;
