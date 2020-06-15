@@ -243,26 +243,27 @@ void GraspingDemo::attainObject() {
     //     target_angle[2] = target_angle[2] + 3.1415926;
     // }
 
-    orientation.setRPY(1.57, 1.57, -target_angle[0]);
-    ROS_WARN("angle info : %f, %f,%f", 1.57, 1.57, -target_angle[0]);
-    target_pose1.orientation.x = orientation.getX();
-    target_pose1.orientation.y = orientation.getY();
-    target_pose1.orientation.z = orientation.getZ();
-    target_pose1.orientation.w = orientation.getW();
-
     // target_pose1.Quaternion = target_angle;
     target_pose1.position = currPose.pose.position;
     // target_pose1.position.z = obj_robot_frame.getZ() - hor_grasp_z;
     if (fabs(fabs(target_angle[2]) - 1.5) < hor_ratio) {
       target_pose1.position.z = obj_robot_frame.getZ() - hor_grasp_z;
       ROS_WARN("HOR");
+      orientation.setRPY(1.57, 1.57, -target_angle[0]);
+      ROS_WARN("angle info : %f, %f,%f", 1.57, 1.57, -target_angle[0]);
     } else if (fabs(fabs(target_angle[2]) - 0.4) < ver_ratio) {
       target_pose1.position.z = obj_robot_frame.getZ() - ver_grasp_z;
       ROS_WARN("VER");
+      orientation.setRPY(1.57, 1.57, -target_angle[1]);
+      ROS_WARN("angle info : %f, %f,%f", 1.57, 1.57, -target_angle[1]);
     } else
       target_pose1.position.z =
           obj_robot_frame.getZ() - (ver_grasp_z + hor_grasp_z) / 2;
-
+    orientation.setRPY(1.57, 1.57, -target_angle[0]);
+    target_pose1.orientation.x = orientation.getX();
+    target_pose1.orientation.y = orientation.getY();
+    target_pose1.orientation.z = orientation.getZ();
+    target_pose1.orientation.w = orientation.getW();
     // cout << "grasp_z" << grasp_z << endl;
     armgroup.setPoseTarget(target_pose1);
     armgroup.move();

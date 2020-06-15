@@ -14,6 +14,8 @@
 	<param name="dx"  type="double" value="0"/>
 	<param name="dy"  type="double" value="0"/>
 	<param name="dz"  type="double" value="-180"/>
+	<param name="side_min"  type="double" value="-0.072"/>
+	<param name="side_max"  type="double" value="0.0792"/>
 	<param name="max_num"  type="int" value="20000"/>
 	<param name="min_num"  type="int" value="80"/>
 	<param name="view_on"  type="bool" value="0"/>

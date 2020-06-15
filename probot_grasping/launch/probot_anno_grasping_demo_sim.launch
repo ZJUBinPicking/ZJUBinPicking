@@ -13,8 +13,8 @@
          <param name="grasp_y"            value="0.3"/>
          <param name="hor_grasp_z"            value="-0.0055"/>
          <param name="ver_grasp_z"            value="-0.001"/>
-         <param name="hor_ratio"            value="0.4"/>
-         <param name="ver_ratio"            value="0.4"/>
+         <param name="hor_ratio"            value="0.5"/>
+         <param name="ver_ratio"            value="0.5"/>
          <param name="change_angle"            value="0"/>
         <param name="real_z"            value="0.15"/>
         <param name="simulation"            value="1"/>

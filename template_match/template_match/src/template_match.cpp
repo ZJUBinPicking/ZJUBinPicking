@@ -57,6 +57,8 @@ void template_match::init() {
   ros::param::get("~simulation", simulation);
   ros::param::get("~vision_simulation", vision_simulation);
   ros::param::get("~voxel_grid_size", voxel_grid_size);
+  ros::param::get("~side_max", side_max);
+  ros::param::get("~side_min", side_min);
   if (simulation && vision_simulation) {
     bat_sub = nh.subscribe("/kinect2/hd/points", 1, &template_match::cloudCB,
                            this);  //接收点云
@@ -282,7 +284,7 @@ void template_match::cluster(pcl::PointCloud<PointT>::Ptr cloud_,
       match(cloud_cluster, cloud_2, model_pipe, j);
       // else
       //   match(cloud_cluster, cloud_2, model_cylinder, j);
-      if (target_pos[j](0) <= -0.072 || target_pos[j](0) >= 0.0792) {
+      if (target_pos[j](0) <= side_min || target_pos[j](0) >= side_max) {
         height_map_side.insert(make_pair(j, target_pos[j](2)));
         ROS_ERROR("side object!!!!!");
       } else {
@@ -392,13 +394,19 @@ void template_match::match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal,
     // / target_vector(1)); result_pose.target_angle[2] =
     //     atan(sqrt(pow(target_vector(0), 2) + pow(target_vector(1), 2)) /
     //          target_vector(2));
+    for (int i = 0; i < grasp_pos.size(); i++) {
+      grasp_projection.push_back(final_trans.back() * grasp_pos[i]);
+    }
     target_angle_ = Eigen::Matrix<float, 3, 1>(
         atan(target_vector(1) / target_vector(0)),
-        atan(target_vector(2) / target_vector(0)),
+        // atan(target_vector(2) / target_vector(0)),
+        atan((grasp_projection.back()(1, 0) - target_pos.back()(1, 0)) /
+             (grasp_projection.back()(0, 0) - target_pos.back()(0, 0))),
         atan(sqrt(pow(target_vector(0), 2) + pow(target_vector(1), 2)) /
              target_vector(2)));
     target_angle.push_back(target_angle_);
     cout << "angle2x angle2y angle2z" << target_angle.back() << endl;
+    grasp_projection.clear();
     // } else {
     //   target_pos[index] = final_trans.back() * origin_pos;
     //   cout << "target" << target_pos[index] << endl;
@@ -459,12 +467,13 @@ void template_match::match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal,
       viewerOneOff(viewer, this->target_pos[index](0, 0),
                    this->target_pos[index](1, 0), this->target_pos[index](2, 0),
                    "origin");
-      Eigen::Matrix<float, 4, 1> temp;
 
       for (int i = 0; i < grasp_pos.size(); i++) {
-        temp = final_trans.back() * grasp_pos[i];
+        grasp_projection.push_back(final_trans.back() * grasp_pos[i]);
 
-        viewerOneOff(viewer, temp(0, 0), temp(1, 0), temp(2, 0), "gasp" + i);
+        viewerOneOff(viewer, grasp_projection[i](0, 0),
+                     grasp_projection[i](1, 0), grasp_projection[i](2, 0),
+                     "gasp" + i);
       }
       // 1. 旋转后的点云rotated --------------------------------
       pcl::PointCloud<pcl::PointXYZ>::Ptr t_cloud(transformed_cloud2);
@@ -615,9 +624,9 @@ void template_match::mainloop() {
     // cout << "666" << endl;
     ros::spinOnce();
     if (com_flag) {
-      vector<pair<int, double> > vec(height_map.begin(), height_map.end());
-      vector<pair<int, double> > vec2(height_map_side.begin(),
-                                      height_map_side.end());
+      vector<pair<int, double>> vec(height_map.begin(), height_map.end());
+      vector<pair<int, double>> vec2(height_map_side.begin(),
+                                     height_map_side.end());
       //对线性的vector进行排序
       sort(vec.begin(), vec.end(), cmp);
       sort(vec2.begin(), vec2.end(), cmp);

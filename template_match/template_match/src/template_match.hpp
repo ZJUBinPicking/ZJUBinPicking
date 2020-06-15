@@ -229,7 +229,7 @@ class template_match {
   double min_x, min_y, min_z, max_x, max_y, max_z;
   double model_size, voxel_grid_size;
   int object_index = 0;
-  double theta, dx, dy, dz;
+  double theta, dx, dy, dz,side_min,side_max;
   int arm_state;
   int max_num, min_num;
   int object_num = 0;
@@ -242,7 +242,7 @@ class template_match {
   Eigen::Vector3f euler_angles;
   Eigen::Matrix<float, 4, 1> origin_pos;
   std::vector<Eigen::Matrix<float, 4, 1>> grasp_pos;
-
+  vector<Eigen::Matrix<float, 4, 1>> grasp_projection;
   Eigen::Matrix<float, 3, 1> origin_angle;
   std::vector<Eigen::Matrix<float, 3, 1>> target_angle;
   Eigen::Matrix<float, 3, 1> target_vector;
