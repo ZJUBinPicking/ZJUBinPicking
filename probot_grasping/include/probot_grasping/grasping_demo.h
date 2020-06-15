@@ -140,7 +140,7 @@ class GraspingDemo {
   ros::Subscriber trans_sub;
   bpmsg::pose result_pos;
   bpmsg::arm_state state;
-  double hor_grasp_z, ver_grasp_z;
+  double hor_grasp_z, ver_grasp_z, side_max, side_min;
   double grasp_y;
   double grasp_x, real_z;
   double change_angle;

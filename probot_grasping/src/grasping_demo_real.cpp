@@ -214,7 +214,7 @@ void GraspingDemo::attainObject() {
   // if (target_pos[1] > -0.09 && target_pos[1] < 0.078) {
   ROS_ERROR("!!!!posx %f  posy %f posz %f", target_pos[0], target_pos[1],
             target_pos[2]);
-  if (target_pos[1] > -0.135 && target_pos[1] < 0.11) {
+  if (target_pos[1] > side_min && target_pos[1] < side_max) {
     if (simulation)
       attainPosition(target_pos[0], target_pos[1], target_pos[2] + grasp_y);
     else
@@ -273,10 +273,10 @@ void GraspingDemo::attainObject() {
     // cout << "grasp_z" << grasp_z << endl;
     armgroup.setPoseTarget(target_pose1);
     armgroup.move();
-  } else if (target_pos[1] <= -0.135 || target_pos[1] >= 0.11) {
+  } else if (target_pos[1] <= side_min || target_pos[1] >= side_max) {
     ROS_WARN("side!!!!!!!!");
     double temp;
-    if (target_pos[1] < -0.13)
+    if (target_pos[1] < side_min)
       temp = -0.04;
     else
       temp = 0.04;
@@ -538,6 +538,9 @@ int main(int argc, char **argv) {
   ros::param::get("~ver_ratio", simGrasp.ver_ratio);
   ros::param::get("~real_z", simGrasp.real_z);
   ros::param::get("~simulation", simGrasp.simulation);
+  ros::param::get("~side_min", simGrasp.side_min);
+  ros::param::get("~side_max", simGrasp.side_max);
+
   ROS_WARN("grasp info : %f, %f,%f", simGrasp.grasp_x, simGrasp.grasp_y,
            simGrasp.ver_grasp_z);
   ROS_INFO_STREAM("Waiting for five seconds..");
