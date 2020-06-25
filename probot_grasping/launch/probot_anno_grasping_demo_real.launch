@@ -9,17 +9,17 @@
         <param name="pregrasp_x"            value="0.20"/>
         <param name="pregrasp_y"            value="-0.17"/>
         <param name="pregrasp_z"            value="0.28"/>
-         <param name="grasp_x"            value="0.07"/>
+         <param name="grasp_x"            value="0.1"/>
          <param name="grasp_y"            value="0.11"/>
-         <param name="hor_grasp_z"            value="0"/>
-         <param name="ver_grasp_z"            value="0.001"/>
+         <param name="hor_grasp_z"            value="-0.012"/>
+         <param name="ver_grasp_z"            value="-0.001"/>
          <param name="hor_ratio"            value="0.4"/>
          <param name="ver_ratio"            value="0.4"/>
          <param name="change_angle"            value="0"/>
         <param name="real_z"            value="-0.08"/>
         <param name="simulation"            value="0"/>
-        <param name="side_min"            value="-0.135"/>
-        <param name="side_max"            value="0.11"/>
+        <param name="side_min"            value="-0.14"/>
+        <param name="side_max"            value="0.10"/>
          <!-- 0.06 -0.012-->
     </node>
 

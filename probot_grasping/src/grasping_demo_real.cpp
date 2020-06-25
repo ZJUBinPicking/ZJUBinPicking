@@ -94,8 +94,8 @@ void GraspingDemo::posCb(bpmsg::pose msg) {
       obj_robot_frame = camera_to_robot_ * obj_camera_frame;
     } else {
       obj_camera_frame.setZ(-msg.target_pos[2] + 0.67 + grasp_y);
-      obj_camera_frame.setY(msg.target_pos[0] + 0);
-      obj_camera_frame.setX(msg.target_pos[1] + 0.23 + 0.02);
+      obj_camera_frame.setY(msg.target_pos[0] + 0 - 0.04);
+      obj_camera_frame.setX(msg.target_pos[1] + 0.23 + 0.018);
       obj_robot_frame = obj_camera_frame;
     }
     grasp_running = true;
@@ -425,9 +425,9 @@ void GraspingDemo::lift() {
   //   joint_value[0] = CV_PI / 6;
   int k = joint_value[0] / CV_PI;
   double res = joint_value[0] - k * CV_PI;
-  res > 0 ? joint_value[0] = k * CV_PI + CV_PI / 5
-          : joint_value[0] = k * CV_PI - CV_PI / 5;
-
+  // res > 0 ? joint_value[0] = k * CV_PI + CV_PI / 5
+  //         : joint_value[0] = k * CV_PI - CV_PI / 5;
+  joint_value[0] = k * CV_PI + CV_PI / 3;
   // joint_value[0] > 0 ? joint_value[0] = CV_PI / 6 : joint_value[0] = -CV_PI
   // / 6;
   armgroup.setJointValueTarget(joint_value);
