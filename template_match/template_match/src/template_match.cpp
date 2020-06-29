@@ -59,6 +59,7 @@ void template_match::init() {
   ros::param::get("~voxel_grid_size", voxel_grid_size);
   ros::param::get("~side_max", side_max);
   ros::param::get("~side_min", side_min);
+  ros::param::get("~save_filter", save_filter);
   if (simulation && vision_simulation) {
     bat_sub = nh.subscribe("/kinect2/hd/points", 1, &template_match::cloudCB,
                            this);  //接收点云
@@ -198,12 +199,13 @@ void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
   if (view_on) {
     // showCloud(cloud_filtered, mycloud);
     showCloud(cloud_filtered, mycloud);
-    // pcl::io::savePCDFileASCII(
-    //     "/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/"
-    //     "gather.pcd",
-    //     *cloud_filtered);
   }
-
+  if (save_filter) {
+    pcl::io::savePCDFileASCII(
+        "/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/"
+        "filter_1.pcd",
+        *cloud_filtered);
+  }
   // mycloud = cloud_filtered;
   // cluster(mycloud);
   // trans_pub.publish(result_pose);
@@ -273,46 +275,136 @@ void template_match::cluster(pcl::PointCloud<PointT>::Ptr cloud_,
       std::stringstream ss;
 
       ss << "cloud_cluster_" << j;
-      goals.push_back(cloud_cluster);
-      pcl::PointXYZ min, max, cy_minpt, cy_maxpt;
-      pcl::getMinMax3D(*cloud_cluster, min, max);
-      float temp = pow((min.x - max.x), 2) + pow((min.y - max.y), 2) +
-                   pow((min.z - max.z), 2);
-      cout << temp << endl;
-      // if (temp > 0.001825)
-      // box(cloud_cluster);
-      match(cloud_cluster, cloud_2, model_pipe, j);
-      // else
-      //   match(cloud_cluster, cloud_2, model_cylinder, j);
+
+      if (cloud_cluster->points.size() > 550)
+        area_division(cloud_cluster);
+      else {
+        goals.push_back(cloud_cluster);
+      }
+      j++;
+    }
+    cout << goals.size() << endl;
+    for (int i = 0; i < goals.size(); i++) {
+      match(goals[i], cloud_2, model_pipe, j);
       if (target_pos[j](0) <= side_min || target_pos[j](0) >= side_max) {
         height_map_side.insert(make_pair(j, target_pos[j](2)));
         ROS_ERROR("side object!!!!!");
       } else {
         height_map.insert(make_pair(j, target_pos[j](2)));
       }
-      j++;
     }
     cout << goals.size() << endl;
     object_num = goals.size();
     com_flag = 1;
-    /*
-     for (int i = 0; i < 4; i++) {
-       for (int j = 0; j < 4; j++) {
-         result_pose.translation[i * 4 + j] = final_trans.back()(i, j);
-       }
-     }
-     for (int i = 0; i < 3; i++) {
-       result_pose.target_pos[i] = this->target_pos(i, 0);
-       // result_pose.target_angle[2 - i] = this->euler_angles.transpose()(0,
-     i);
-     }
-     result_pose.object_num = goals.size();
-     if (goals.size())
-       result_pose.if_detect = result_pose.DETECTSUCCESS;
-     else
-       result_pose.if_detect = result_pose.NOTHING;
-     trans_pub.publish(result_pose);*/
   }
+}
+void template_match::area_division(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
+  pcl::search::Search<pcl::PointXYZ>::Ptr tree =
+      boost::shared_ptr<pcl::search::Search<pcl::PointXYZ>>(
+          new pcl::search::KdTree<pcl::PointXYZ>);
+
+  pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);
+  pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> normal_estimator;
+  normal_estimator.setSearchMethod(tree);
+  normal_estimator.setInputCloud(cloud);
+  normal_estimator.setKSearch(50);
+  normal_estimator.compute(*normals);
+
+  pcl::IndicesPtr indices(new std::vector<int>);
+  pcl::PassThrough<pcl::PointXYZ> pass;
+  pass.setInputCloud(cloud);
+  pass.setFilterFieldName("z");
+  pass.setFilterLimits(0.0, 1.0);
+  pass.filter(*indices);
+
+  pcl::RegionGrowing<pcl::PointXYZ, pcl::Normal> reg;
+  reg.setMinClusterSize(50);
+  reg.setMaxClusterSize(1000);
+  reg.setSearchMethod(tree);
+  reg.setNumberOfNeighbours(20);
+  reg.setInputCloud(cloud);
+  // reg.setIndices (indices);
+  reg.setInputNormals(normals);
+  reg.setSmoothnessThreshold(10.0 / 180.0 * M_PI);
+  reg.setCurvatureThreshold(0.5);
+
+  std::vector<pcl::PointIndices> clusters;
+  reg.extract(clusters);
+
+  for (int i = 0; i < clusters.size(); i++) {
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster(
+        new pcl::PointCloud<pcl::PointXYZ>);
+    for (auto index : clusters[i].indices)
+      cloud_cluster->points.push_back(cloud->points[index]);  //*
+    cloud_cluster->width = cloud_cluster->points.size();
+    cloud_cluster->height = 1;
+    cloud_cluster->is_dense = true;
+    if (cloud_cluster->points.size() > min_num) {
+      goals.push_back(cloud_cluster);
+      cout << "goals  push back" << cloud_cluster->points.size() << endl;
+    }
+  }
+  std::cout << "Number of clusters is equal to " << clusters.size()
+            << std::endl;
+  std::cout << "First cluster has " << clusters[0].indices.size() << " points."
+            << endl;
+  std::cout << "These are the indices of the points of the initial" << std::endl
+            << "cloud that belong to the first cluster:" << std::endl;
+  int counter = 0;
+
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr colored_cloud = reg.getColoredCloud();
+  // pcl::visualization::CloudViewer viewer2("Cluster viewer");
+  pcl::visualization::PCLVisualizer::Ptr viewer(
+      new pcl::visualization::PCLVisualizer("3D Viewer"));
+  viewer->addPointCloud<pcl::PointXYZRGB>(colored_cloud, "sample cloud1");
+  while (!viewer->wasStopped()) {
+    viewer->spinOnce();
+  }
+}
+
+void template_match::ndt_match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal,
+                               pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_2,
+                               pcl::PointCloud<pcl::PointXYZ>::Ptr model,
+                               int index) {
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+  cloud = goal;
+  // Initializing Normal Distributions Transform (NDT).
+  pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ> ndt;
+
+  // Setting scale dependent NDT parameters
+  // Setting minimum transformation difference for termination condition.
+  ndt.setTransformationEpsilon(0.01);
+  // Setting maximum step size for More-Thuente line search.
+  ndt.setStepSize(0.001);
+  // Setting Resolution of NDT grid structure (VoxelGridCovariance).
+  ndt.setResolution(0.004);
+
+  // Setting max number of registration iterations.
+  ndt.setMaximumIterations(50);
+
+  // Setting point cloud to be aligned.
+  ndt.setInputSource(model);
+  // Setting point cloud to be aligned to.
+  ndt.setInputTarget(goal);
+
+  // Set initial alignment estimate found using robot odometry.
+  Eigen::AngleAxisf init_rotation(0.6931, Eigen::Vector3f::UnitZ());
+  Eigen::Translation3f init_translation(1.79387, 0.720047, 0);
+  Eigen::Matrix4f init_guess = (init_translation * init_rotation).matrix();
+
+  // Calculating required rigid transform to align the input cloud to the target
+  // cloud.
+  pcl::PointCloud<pcl::PointXYZ>::Ptr output_cloud(
+      new pcl::PointCloud<pcl::PointXYZ>);
+  ndt.align(*output_cloud);
+
+  std::cout << "Normal Distributions Transform has converged:"
+            << ndt.hasConverged() << " score: " << ndt.getFitnessScore()
+            << std::endl;
+  cout << ndt.getFinalTransformation() << endl;
+  // Transforming unfiltered, input cloud using found transform.
+  pcl::transformPointCloud(*model, *output_cloud, ndt.getFinalTransformation());
+  showCloud(output_cloud, cloud);
 }
 
 void template_match::match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal,
@@ -407,50 +499,7 @@ void template_match::match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal,
     target_angle.push_back(target_angle_);
     cout << "angle2x angle2y angle2z" << target_angle.back() << endl;
     grasp_projection.clear();
-    // } else {
-    //   target_pos[index] = final_trans.back() * origin_pos;
-    //   cout << "target" << target_pos[index] << endl;
 
-    //   // result_pose.target_angle[0] = atan(target_vector(1) /
-    //   // target_vector(0)); result_pose.target_angle[1] =
-    //   atan(target_vector(0)
-    //   // / target_vector(1)); result_pose.target_angle[2] =
-    //   //     atan(sqrt(pow(target_vector(0), 2) + pow(target_vector(1), 2))
-    //   /
-    //   //          target_vector(2));
-    //   target_angle[index] = Eigen::Matrix<float, 3, 1>(
-    //       atan(target_vector(1) / target_vector(0)),
-    //       atan(target_vector(0) / target_vector(1)),
-    //       atan(sqrt(pow(target_vector(0), 2) + pow(target_vector(1), 2)) /
-    //            target_vector(2)));
-    //   cout << "angle2x angle2y angle2z" << target_angle[index] << endl;
-    // }
-
-    // euler_angles = rotation.eulerAngles(2, 1, 0);
-    // cout << "yaw(Z) pitch(Y) roll(X)=\n"
-    //      << euler_angles.transpose() << endl
-    //      << endl;
-    /*
-        for (int i = 0; i < 4; i++) {
-          for (int j = 0; j < 4; j++) {
-            result_pose.translation[i * 4 + j] = final_trans.back()(i, j);
-          }
-        }
-        for (int i = 0; i < 3; i++) {
-          result_pose.target_pos[i] = this->target_pos(i, 0);
-          // result_pose.target_angle[2 - i] =
-       this->euler_angles.transpose()(0, i);
-        }
-        result_pose.object_num = goals.size();
-        if (goals.size())
-          result_pose.if_detect = result_pose.DETECTSUCCESS;
-        else
-          result_pose.if_detect = result_pose.NOTHING;
-        trans_pub.publish(result_pose);*/
-    // trans_pub.publish(result_pose);
-    // pcl::io::savePCDFileBinary("output.pcd", transformed_cloud);
-
-    // showCloud(PointCloud::Ptr(&transformed_cloud), model_);
     if (view_on) {
       pcl::visualization::PCLVisualizer viewer("example");
       // // 设置坐标系系统
@@ -538,41 +587,7 @@ Eigen::Matrix4f template_match::icp(pcl::PointCloud<PointT>::Ptr cloud_in,
       new pcl::PointCloud<pcl::PointXYZ>;
   pcl::transformPointCloud(*cloud_in, *transformed_cloud,
                            icp.getFinalTransformation());
-  // pcl::visualization::PCLVisualizer viewer("example");
-  // // 设置坐标系系统
-  // viewer.addCoordinateSystem(0.5, "cloud", 0);
-  // // 设置背景色
-  // viewer.setBackgroundColor(0.05, 0.05, 0.05,
-  //                           0);  // Setting background to a dark grey
 
-  // // 1. 旋转后的点云rotated --------------------------------
-  // pcl::PointCloud<pcl::PointXYZ>::Ptr t_cloud(transformed_cloud);
-  // PCLHandler transformed_cloud_handler(t_cloud, 0, 255, 255);
-  // viewer.addPointCloud(t_cloud, transformed_cloud_handler,
-  // "transformed_cloud");
-  // // 设置渲染属性（点大小）
-  // viewer.setPointCloudRenderingProperties(
-  //     pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2,
-  //     "transformed_cloud");
-
-  // PCLHandler target_cloud_handler(cloud_out, 255, 100, 100);
-  // viewer.addPointCloud(cloud_out, target_cloud_handler, "target_cloud");
-  // // 设置渲染属性（点大小）
-  // viewer.setPointCloudRenderingProperties(
-  //     pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "target_cloud");
-
-  // PCLHandler init_cloud_handler(cloud_in, 255, 255, 255);
-  // viewer.addPointCloud(cloud_in, init_cloud_handler, "init");
-  // // 设置渲染属性（点大小）
-  // viewer.setPointCloudRenderingProperties(
-  //     pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "init");
-
-  // while (
-  //     !viewer
-  //          .wasStopped()) {  // Display the visualiser until 'q' key is
-  //          pressed
-  //   viewer.spinOnce();
-  // }
   return icp.getFinalTransformation();
 }
 

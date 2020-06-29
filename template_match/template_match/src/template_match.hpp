@@ -29,10 +29,29 @@
 typedef pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
     PCLHandler;
 #include <math.h>
+#include <pcl/ModelCoefficients.h>
 #include <pcl/features/moment_of_inertia_estimation.h>
+#include <pcl/features/normal_3d.h>
+#include <pcl/filters/approximate_voxel_grid.h>
+#include <pcl/filters/extract_indices.h>
+#include <pcl/filters/passthrough.h>
+#include <pcl/filters/voxel_grid.h>
 #include <pcl/io/pcd_io.h>
+#include <pcl/kdtree/kdtree.h>
+#include <pcl/octree/octree.h>
 #include <pcl/point_types.h>
 #include <pcl/registration/icp.h>
+#include <pcl/registration/ndt.h>
+#include <pcl/sample_consensus/method_types.h>
+#include <pcl/sample_consensus/model_types.h>
+#include <pcl/search/kdtree.h>
+#include <pcl/search/search.h>
+#include <pcl/segmentation/extract_clusters.h>
+#include <pcl/segmentation/min_cut_segmentation.h>
+#include <pcl/segmentation/region_growing.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/visualization/cloud_viewer.h>
+#include <pcl/visualization/pcl_visualizer.h>
 
 #include <Eigen/Core>
 #include <ctime>
@@ -44,7 +63,6 @@ typedef pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
 
 #include "bpmsg/arm_state.h"
 #include "bpmsg/pose.h"
-
 // #include "template_match/pose.h"
 typedef pcl::PointXYZ PointT;
 typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
@@ -229,14 +247,14 @@ class template_match {
   double min_x, min_y, min_z, max_x, max_y, max_z;
   double model_size, voxel_grid_size;
   int object_index = 0;
-  double theta, dx, dy, dz,side_min,side_max;
+  double theta, dx, dy, dz, side_min, side_max;
   int arm_state;
   int max_num, min_num;
   int object_num = 0;
   int com_flag = 0;
   int pick_index;
   bool view_on;
-  bool simulation, vision_simulation;
+  bool simulation, vision_simulation, save_filter;
   clock_t start, end;
   string model_file_, model_file_2, model_file_1;
   Eigen::Vector3f euler_angles;
@@ -282,5 +300,9 @@ class template_match {
   Eigen::Matrix4f icp(pcl::PointCloud<PointT>::Ptr cloud_in,
                       pcl::PointCloud<PointT>::Ptr cloud_out);
   void box(pcl::PointCloud<PointT>::Ptr cloud);
+  void ndt_match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal,
+                 pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_2,
+                 pcl::PointCloud<pcl::PointXYZ>::Ptr model, int index);
+  void area_division(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
 };
 #endif
