@@ -1,4 +1,4 @@
-#include "template_match.hpp"
+#include "template_match/template_match.hpp"
 int user_data;
 bool cmp(const pair<int, double> &a, const pair<int, double> &b) {
   return a.second < b.second;
@@ -11,8 +11,8 @@ bool cmp(const pair<int, double> &a, const pair<int, double> &b) {
 
 // 0.014 0.014 0
 // 0.0025 0.014 0
-void viewerOneOff(pcl::visualization::PCLVisualizer &viewer, double x, double y,
-                  double z, string name) {
+void template_match::viewerOneOff(pcl::visualization::PCLVisualizer &viewer,
+                                  double x, double y, double z, string name) {
   // viewer.setBackgroundColor(1.0, 0.5, 1.0);
   //球体坐标
   pcl::PointXYZ o;
@@ -60,6 +60,12 @@ void template_match::init() {
   ros::param::get("~side_max", side_max);
   ros::param::get("~side_min", side_min);
   ros::param::get("~save_filter", save_filter);
+  ros::param::get("~min_sample_distance", min_sample_distance);
+  ros::param::get("~max_correspondence_distance", max_correspondence_distance);
+  ros::param::get("~nr_iterations", nr_iterations);
+  ros::param::get("~normal_radius_", normal_radius_);
+  ros::param::get("~feature_radius_", feature_radius_);
+
   if (simulation && vision_simulation) {
     bat_sub = nh.subscribe("/kinect2/hd/points", 1, &template_match::cloudCB,
                            this);  //接收点云
@@ -75,9 +81,11 @@ void template_match::init() {
                          this);  //接收点云
 
   trans_pub = nh.advertise<bpmsg::pose>("/goal_translation", 30);
-  this->model_cylinder = PointCloud::Ptr(new PointCloud);
+  this->model_cylinder =
+      pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
   pcl::io::loadPCDFile(model_file_2, *model_cylinder);
-  this->model_pipe = PointCloud::Ptr(new PointCloud);
+  this->model_pipe =
+      pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
   if (simulation) {
     pcl::io::loadPCDFile(model_file_1, *model_pipe);
   } else {
@@ -85,6 +93,7 @@ void template_match::init() {
   }
   pcl::PointXYZ pipe_minpt, pipe_maxpt, cy_minpt, cy_maxpt;
   pcl::getMinMax3D(*model_pipe, pipe_minpt, pipe_maxpt);
+
   // pcl::getMinMax3D(*model_cylinder, cy_minpt, cy_maxpt);
   // cout << "pipe min" << pipe_minpt << endl;
   // cout << "pipe max" << pipe_maxpt << endl;
@@ -141,7 +150,7 @@ void template_match::showCloud(pcl::PointCloud<PointT>::Ptr cloud1,
   viewer->createViewPort(0.5, 0.0, 1.0, 1.0, v2);
   viewer->addPointCloud<pcl::PointXYZ>(cloud2, "sample cloud2", v2);
   viewer->setBackgroundColor(0.3, 0.3, 0.3, v2);
-  viewer->addCoordinateSystem(1.0);
+  // viewer->addCoordinateSystem(1.0);
 
   viewer->initCameraParameters();
   while (!viewer->wasStopped()) {
@@ -192,7 +201,11 @@ void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
     pcl::PointCloud<pcl::PointXYZ>::Ptr tempCloud(
         new pcl::PointCloud<pcl::PointXYZ>);
     vox_grid.filter(*tempCloud);
-    cloud_filtered = tempCloud;
+    if (view_on) {
+      // showCloud(cloud_filtered, mycloud);
+      showCloud(tempCloud, mycloud);
+    }
+    cloud_filtered = planar_segmentation(tempCloud);
     std::cout << "after: The points data:  " << cloud_filtered->points.size()
               << std::endl;
   }
@@ -219,26 +232,44 @@ void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
     // showCloud(cloud_filtered, mycloud);
 
     trans_pub.publish(result_pose);
-    cluster(cloud_filtered, mycloud);
+    dbscan_cluster(cloud_filtered, mycloud);
     // match(cloud_filtered, mycloud);
   }
   if (vision_simulation) {
     std::cout << "Simulation!!!!The points data:  "
               << cloud_filtered->points.size() << std::endl;
     arm_state = 0;
-    cluster(cloud_filtered, mycloud);
+    dbscan_cluster(cloud_filtered, mycloud);
   }
-  // if arm has already picked the object, the program will stop detect, and
-  // restart for next detection
-  // else if (arm_state == 1 && com_flag) {
-  //   result_pose.if_detect = 0;
-  //   result_pose.object_num = 0;
-  //   trans_pub.publish(result_pose);
-  // }
+}
+void template_match::dbscan_cluster(
+    pcl::PointCloud<PointT>::Ptr cloud_,
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_2) {
+  DBSCAN cluster(cloud_, 0.010f, 40);  // 0.011f, 50
+  cluster.start_scan();
+  goals = cluster.result_cloud_;
+  cout << goals.size() << endl;
+  for (int i = 0; i < goals.size(); i++) {
+    cout << "The " << i << " cluster" << endl;
+    cout << "PointCloud representing the Cluster: " << goals[i]->points.size()
+         << " data points." << endl;
+    start = clock();
+    match(goals[i], cloud_, model_pipe, 0);
+    if (target_pos[i](0) <= side_min || target_pos[i](0) >= side_max) {
+      height_map_side.insert(make_pair(i, target_pos[i](2)));
+      ROS_ERROR("side object!!!!!");
+    } else {
+      height_map.insert(make_pair(i, target_pos[i](2)));
+    }
+  }
+  cout << goals.size() << endl;
+  object_num = goals.size();
+  com_flag = 1;
 }
 
-void template_match::cluster(pcl::PointCloud<PointT>::Ptr cloud_,
-                             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_2) {
+void template_match::kmeans_cluster(
+    pcl::PointCloud<PointT>::Ptr cloud_,
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_2) {
   if (arm_state == 0 || arm_state == 2) {
     pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(
         new pcl::search::KdTree<pcl::PointXYZ>);
@@ -286,17 +317,52 @@ void template_match::cluster(pcl::PointCloud<PointT>::Ptr cloud_,
     cout << goals.size() << endl;
     for (int i = 0; i < goals.size(); i++) {
       match(goals[i], cloud_2, model_pipe, j);
-      if (target_pos[j](0) <= side_min || target_pos[j](0) >= side_max) {
-        height_map_side.insert(make_pair(j, target_pos[j](2)));
+      if (target_pos[i](0) <= side_min || target_pos[i](0) >= side_max) {
+        height_map_side.insert(make_pair(i, target_pos[i](2)));
         ROS_ERROR("side object!!!!!");
       } else {
-        height_map.insert(make_pair(j, target_pos[j](2)));
+        height_map.insert(make_pair(j, target_pos[i](2)));
       }
     }
     cout << goals.size() << endl;
     object_num = goals.size();
     com_flag = 1;
   }
+}
+pcl::PointCloud<pcl::PointXYZ>::Ptr template_match::planar_segmentation(
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
+  pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+  pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+  pcl::SACSegmentation<pcl::PointXYZ> seg;
+  seg.setOptimizeCoefficients(true);
+  seg.setModelType(pcl::SACMODEL_PLANE);
+  seg.setMethodType(pcl::SAC_RANSAC);
+  seg.setDistanceThreshold(0.01);
+  seg.setInputCloud(cloud);
+  seg.segment(*inliers, *coefficients);
+
+  if (inliers->indices.size() == 0) {
+    PCL_ERROR("Could not estimate a planar model for the given dataset.");
+  }
+  std::cerr << "Model coefficients: " << coefficients->values[0] << " "
+            << coefficients->values[1] << " " << coefficients->values[2] << " "
+            << coefficients->values[3] << std::endl;
+
+  std::cerr << "Model inliers: " << inliers->indices.size() << std::endl;
+
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster(
+      new pcl::PointCloud<pcl::PointXYZ>);
+
+  pcl::ExtractIndices<pcl::PointXYZ> extract;
+  extract.setInputCloud(cloud);
+  extract.setIndices(inliers);
+  extract.setNegative(true);
+  extract.filter(*cloud_cluster);
+
+  cloud_cluster->width = cloud_cluster->points.size();
+  cloud_cluster->height = 1;
+  cloud_cluster->is_dense = true;
+  return cloud_cluster;
 }
 void template_match::area_division(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
   pcl::search::Search<pcl::PointXYZ>::Ptr tree =
@@ -377,7 +443,7 @@ void template_match::ndt_match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal,
   // Setting maximum step size for More-Thuente line search.
   ndt.setStepSize(0.001);
   // Setting Resolution of NDT grid structure (VoxelGridCovariance).
-  ndt.setResolution(0.004);
+  ndt.setResolution(0.001);
 
   // Setting max number of registration iterations.
   ndt.setMaximumIterations(50);
@@ -416,18 +482,19 @@ void template_match::match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal,
         new pcl::PointCloud<pcl::PointXYZ>);
     cloud = goal;
     // for (int i = 0; i < goals.size(); i++) {
-    FeatureCloud template_cloud;
+    FeatureCloud template_cloud(normal_radius_, feature_radius_);
     template_cloud.setInputCloud(model);
     object_templates.push_back(template_cloud);
     // Set the TemplateAlignment inputs
-    TemplateAlignment template_align;
+    TemplateAlignment template_align(
+        min_sample_distance, max_correspondence_distance, nr_iterations);
     for (size_t i = 0; i < object_templates.size(); ++i) {
       template_align.addTemplateCloud(object_templates[i]);
     }
     // cloud.push_back(goals[i]);
 
     // Assign to the target FeatureCloud
-    FeatureCloud target_cloud;
+    FeatureCloud target_cloud(normal_radius_, feature_radius_);
     target_cloud.setInputCloud(cloud);
     template_align.setTargetCloud(target_cloud);
 
@@ -513,8 +580,8 @@ void template_match::match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal,
       viewer.setBackgroundColor(0, 0, 0, v1);
       // viewer.addPointCloud<pcl::PointXYZ>(cloud1, "sample cloud1", v1);
 
-      viewerOneOff(viewer, this->target_pos[index](0, 0),
-                   this->target_pos[index](1, 0), this->target_pos[index](2, 0),
+      viewerOneOff(viewer, this->target_pos.back()(0, 0),
+                   this->target_pos.back()(1, 0), this->target_pos.back()(2, 0),
                    "origin");
 
       for (int i = 0; i < grasp_pos.size(); i++) {
@@ -553,7 +620,7 @@ void template_match::match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal,
       viewer.createViewPort(0.5, 0.0, 1.0, 1.0, v2);
       viewer.addPointCloud<pcl::PointXYZ>(cloud_2, "samplecloud2", v2);
       viewer.setBackgroundColor(0.3, 0.3, 0.3, v2);
-      viewer.addCoordinateSystem(1.0);
+      // viewer.addCoordinateSystem(1.0);
 
       while (!viewer.wasStopped()) {  // Display the visualiser until 'q'key is
         // pressed
@@ -715,7 +782,7 @@ void template_match::box(pcl::PointCloud<PointT>::Ptr cloud) {
   pcl::visualization::PCLVisualizer::Ptr viewer(
       new pcl::visualization::PCLVisualizer("3D Viewer"));
   viewer->setBackgroundColor(0, 0, 0);
-  viewer->addCoordinateSystem(1.0);
+  // viewer->addCoordinateSystem(1.0);
   viewer->initCameraParameters();
   viewer->addPointCloud<pcl::PointXYZ>(cloud, "sample cloud");
   // 添加AABB包容盒
