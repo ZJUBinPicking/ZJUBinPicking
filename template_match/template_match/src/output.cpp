@@ -13,7 +13,7 @@ main(int argc, char **argv) {
   string file_location;
   ros::param::get("~file_location", file_location);
   ros::Publisher pcl_pub =
-      nh.advertise<sensor_msgs::PointCloud2>("/kinect2/hd/points", 1);
+      nh.advertise<sensor_msgs::PointCloud2>("/kinect2/sd/points", 1);
   pcl::PointCloud<pcl::PointXYZ> cloud;
   sensor_msgs::PointCloud2 output;
   pcl::io::loadPCDFile(file_location, cloud);

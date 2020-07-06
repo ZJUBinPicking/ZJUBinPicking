@@ -1,14 +1,14 @@
 <launch>
 	<node pkg="template_match" type="template_match" name="template_match" output="screen">
 	
-	<!-- red-0.23 0.12-->
-	<param name="min_x"  type="double" value="-0.25"/>
-	<!-- green-0.18 0.07 -->
-	<param name="min_y"  type="double" value="-0.13"/>
+	<!-- red -->
+	<param name="min_x"  type="double" value="-0.23"/>
+	<!-- green -->
+	<param name="min_y"  type="double" value="-0.18"/>
 	<!-- blue -->
 	<param name="min_z"  type="double" value="0.5"/>
 	<param name="max_x"  type="double" value="0.12"/>
-	<param name="max_y"  type="double" value="0.135"/>
+	<param name="max_y"  type="double" value="0.07"/>
 	<param name="max_z"  type="double" value="0.75"/>
 
 	
@@ -37,12 +37,12 @@
 	<param name="model_file_2"  type="string" value="/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/cylinder.pcd"/>
 	
 	</node>
-	<node pkg="template_match" type="output_clouds" name="output_clouds" output="screen">
-	<param name="file_location"  type="string" value="/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/filter_1.pcd"/>
-	</node>
 	<!-- <node pkg="template_match" type="output_clouds" name="output_clouds" output="screen">
-	<param name="file_location"  type="string" value="/media/gjx/GJX/DL_dataset/pointclouds/0064_cloud.pcd"/>
+	<param name="file_location"  type="string" value="/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/filter_1.pcd"/>
 	</node> -->
+	<node pkg="template_match" type="output_clouds" name="output_clouds" output="screen">
+	<param name="file_location"  type="string" value="/media/gjx/GJX/DL_dataset/pointclouds/0030_cloud.pcd"/>
+	</node>
 	<!-- <node pkg="template_match" type="dbscan" name="dbscan" output="screen">
 	<param name="file_location"  type="string" value="/media/gjx/GJX/DL_dataset/pointclouds/0065_cloud.pcd"/>
 	</node> -->

@@ -92,7 +92,10 @@ void DBSCAN::find_independent() {
       vector<int> result;
       result = vectors_intersection(neighbourPoints[core_points[i]],
                                     neighbourPoints[core_points[j]]);
-      if (result.size() > 0) {
+      if (result.size() > 0 && neighbourPoints[core_points[i]].size() < 500 &&
+          neighbourPoints[core_points[j]].size() < 500 &&
+          (neighbourPoints[core_points[i]].size() +
+           neighbourPoints[core_points[j]].size()) < 600) {
         neighbourPoints[core_points[i]] = vectors_set_union(
             neighbourPoints[core_points[i]], neighbourPoints[core_points[j]]);
         neighbourPoints[core_points[j]].clear();

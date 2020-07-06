@@ -59,8 +59,9 @@ GraspingDemo::GraspingDemo(ros::NodeHandle n_, float pregrasp_x,
   arm_pub.publish(state);
   ros::WallDuration(5.0).sleep();
   ROS_INFO_STREAM("Getting into the Grasping Position....");
-  attainPosition(pregrasp_x, pregrasp_y, pregrasp_z);
-
+  // attainPosition(pregrasp_x, pregrasp_y, pregrasp_z);
+  this->home_value = armgroup.getCurrentJointValues();
+  goInitial();
   // Subscribe to input video feed and publish object location
   // image_sub_ =
   //     it_.subscribe("/camera/color/image_raw", 1, &GraspingDemo::imageCb,
@@ -93,9 +94,10 @@ void GraspingDemo::posCb(bpmsg::pose msg) {
 
       obj_robot_frame = camera_to_robot_ * obj_camera_frame;
     } else {
-      obj_camera_frame.setZ(-msg.target_pos[2] + 0.67 + grasp_y);
-      obj_camera_frame.setY(msg.target_pos[0] + 0 - 0.04);
-      obj_camera_frame.setX(msg.target_pos[1] + 0.23 + 0.018);
+      // ROS_WARN("X %f Y %f Z %f", dx, dy, dz);
+      obj_camera_frame.setZ(-msg.target_pos[2] + dz + grasp_y);  // 0.67
+      obj_camera_frame.setY(msg.target_pos[0] + dy);             //-0.04
+      obj_camera_frame.setX(msg.target_pos[1] + dx);             // 0.248
       obj_robot_frame = obj_camera_frame;
     }
     grasp_running = true;
@@ -215,7 +217,7 @@ void GraspingDemo::attainObject() {
   ROS_ERROR("!!!!posx %f  posy %f posz %f", target_pos[0], target_pos[1],
             target_pos[2]);
   if (target_pos[1] > side_min && target_pos[1] < side_max) {
-    if (simulation)
+    if (simulation || MODE != 0)
       attainPosition(target_pos[0], target_pos[1], target_pos[2] + grasp_y);
     else
       attainPosition(target_pos[0], target_pos[1], target_pos[2]);
@@ -260,16 +262,19 @@ void GraspingDemo::attainObject() {
     target_pose1.orientation = currPose.pose.orientation;
     target_pose1.position = currPose.pose.position;
     // target_pose1.position.z = obj_robot_frame.getZ() - hor_grasp_z;
-    if (fabs(fabs(target_angle[2]) - 1.5) < hor_ratio) {
-      target_pose1.position.z = obj_robot_frame.getZ() - hor_grasp_z;
-      ROS_WARN("HOR");
-    } else if (fabs(fabs(target_angle[2]) - 0.4) < ver_ratio) {
-      target_pose1.position.z = obj_robot_frame.getZ() - ver_grasp_z;
-      ROS_WARN("VER");
-    } else
-      target_pose1.position.z =
-          obj_robot_frame.getZ() - (ver_grasp_z + hor_grasp_z) / 2;
-
+    if (MODE == 0) {
+      if (fabs(fabs(target_angle[2]) - 1.5) < hor_ratio) {
+        target_pose1.position.z = obj_robot_frame.getZ() - hor_grasp_z;
+        ROS_WARN("HOR");
+      } else if (fabs(fabs(target_angle[2]) - 0.4) < ver_ratio) {
+        target_pose1.position.z = obj_robot_frame.getZ() - ver_grasp_z;
+        ROS_WARN("VER");
+      } else
+        target_pose1.position.z =
+            obj_robot_frame.getZ() - (ver_grasp_z + hor_grasp_z) / 2;
+    } else {
+      target_pose1.position.z = dl_height;
+    }
     // cout << "grasp_z" << grasp_z << endl;
     armgroup.setPoseTarget(target_pose1);
     armgroup.move();
@@ -320,9 +325,15 @@ void GraspingDemo::attainObject() {
     target_pose1.orientation.w = orientation.getW();
     // target_pose1.position = armgroup.getCurrentPose().pose.position;
     // target_pose1.orientation = currPose.pose.orientation;
-    target_pose1.position.x = obj_robot_frame.getX();
-    target_pose1.position.y = obj_robot_frame.getY() + 0.006;
-    target_pose1.position.z = obj_robot_frame.getZ() - ver_grasp_z;
+    if (MODE == 0) {
+      target_pose1.position.x = obj_robot_frame.getX();
+      target_pose1.position.y = obj_robot_frame.getY() + 0.006;
+      target_pose1.position.z = obj_robot_frame.getZ() - ver_grasp_z;
+    } else {
+      target_pose1.position.x = target_pos[0];
+      target_pose1.position.y = target_pos[1] + 0.006;
+      target_pose1.position.z = target_pos[2];
+    }
     // target_pose1.position.z = obj_robot_frame.getZ() - hor_grasp_z;
     // if (fabs(fabs(target_angle[2]) - 1.5) < hor_ratio) {
     //   target_pose1.position.z = obj_robot_frame.getZ() - hor_grasp_z;
@@ -365,7 +376,7 @@ void GraspingDemo::lift() {
   target_pose1.position = currPose.pose.position;
 
   // Starting Postion after picking
-  target_pose1.position.z = target_pose1.position.z + grasp_x;
+  target_pose1.position.z = pregrasp_z;
   armgroup.setPoseTarget(target_pose1);
   armgroup.move();
   // currPose = armgroup.getCurrentPose();
@@ -450,11 +461,11 @@ void GraspingDemo::lift() {
   grippergroup.setNamedTarget("open");
   grippergroup.move();
 
-  joint_value = armgroup.getCurrentJointValues();
+  // joint_value = armgroup.getCurrentJointValues();
 
-  joint_value[0] = 0;
-  armgroup.setJointValueTarget(joint_value);
-  armgroup.move();
+  // joint_value[0] = 0;
+  // armgroup.setJointValueTarget(joint_value);
+  // armgroup.move();
   // target_pose1.position.z = target_pose1.position.z + 0.06;
   // armgroup.setPoseTarget(target_pose1);
   // armgroup.move();
@@ -469,47 +480,141 @@ void GraspingDemo::goHome() {
   //                homePose.pose.position.z);
   // ros::WallDuration(1.0).sleep();
 }
+void GraspingDemo::goInitial() {
+  // geometry_msgs::PoseStamped currPose = armgroup.getCurrentPose();
+  // ros::WallDuration(0.5).sleep();
+  // geometry_msgs::Pose target_pose1;
+  // tf2::Quaternion orientation;
+  // currPose = armgroup.getCurrentPose();
+  // orientation.setRPY(1.57, 1.57, 1.57);
+  // target_pose1.orientation.x = orientation.getX();
+  // target_pose1.orientation.y = orientation.getY();
+  // target_pose1.orientation.z = orientation.getZ();
+  // target_pose1.orientation.w = orientation.getW();
+  // target_pose1.position = currPose.pose.position;
 
+  // // Starting Postion after picking
+  // target_pose1.position.z = pregrasp_z;
+  // armgroup.setPoseTarget(target_pose1);
+  // armgroup.move();c
+  ROS_ERROR("GO INITIAL!!");
+  vector<double> joint_value(6);
+  joint_value = home_value;
+  // for (auto value : joint_value) cout << value << endl;
+  int k = joint_value[0] / CV_PI;
+  double res = joint_value[0] - k * CV_PI;
+  // res > 0 ? joint_value[0] = k * CV_PI + CV_PI / 5
+  //         : joint_value[0] = k * CV_PI - CV_PI / 5;
+  joint_value[0] = k * CV_PI + CV_PI / 3;
+  // joint_value[0] > 0 ? joint_value[0] = CV_PI / 6 : joint_value[0] = -CV_PI
+  // / 6;
+  armgroup.setJointValueTarget(joint_value);
+  armgroup.move();
+  if (detect_state) {
+    joint_value = armgroup.getCurrentJointValues();
+
+    joint_value[0] = 0;
+    armgroup.setJointValueTarget(joint_value);
+    armgroup.move();
+  }
+}
 void GraspingDemo::initiateGrasping() {
   ros::AsyncSpinner spinner(1);
   spinner.start();
   ros::WallDuration(0.5).sleep();
   cout << "init" << endl;
   homePose = armgroup.getCurrentPose();
+  if (MODE == 0) {
+    if (detect_state) {
+      state.pick_state = state.READY_FOR_PICK;
+      state.pick_index = -1;
+      arm_pub.publish(state);
+      vector<double> joint_value(6);
+      // joint_value = armgroup.getCurrentJointValues();
 
-  if (detect_state) {
-    state.pick_state = state.READY_FOR_PICK;
-    state.pick_index = -1;
-    arm_pub.publish(state);
-    // ROS_INFO_STREAM("Approaching the Object....");
-    // endgroup.setNamedTarget("turn");
-    // endgroup.move();
-    // ros::WallDuration(0.5).sleep();
-    // ROS_ERROR_STREAM("turn sucessful!!!!!!!!!!!");
-    attainObject();
-    state.pick_state = state.PICKING;
-    state.pick_index = this->pick_index;
-    arm_pub.publish(state);
-    ROS_INFO_STREAM("Attempting to Grasp the Object now..");
-    grasp();
-    // armgroup.setMaxAccelerationScalingFactor(0.02);
-    // armgroup.setMaxVelocityScalingFactor(0.5);
-    ROS_INFO_STREAM("Lifting the Object....");
-    lift();
-    // armgroup.setMaxAccelerationScalingFactor(0.2);
-    // armgroup.setMaxVelocityScalingFactor(0.8);
-    // ROS_INFO_STREAM("Going back to home position....");
-    // goHome();
+      // joint_value[0] = 0;
+      joint_value = home_value;
+      armgroup.setJointValueTarget(joint_value);
+      armgroup.move();
+      // ROS_INFO_STREAM("Approaching the Object....");
+      // endgroup.setNamedTarget("turn");
+      // endgroup.move();
+      // ros::WallDuration(0.5).sleep();
+      // ROS_ERROR_STREAM("turn sucessful!!!!!!!!!!!");
+      attainObject();
+      state.pick_state = state.PICKING;
+      state.pick_index = this->pick_index;
+      arm_pub.publish(state);
+      ROS_INFO_STREAM("Attempting to Grasp the Object now..");
+      grasp();
+      // armgroup.setMaxAccelerationScalingFactor(0.02);
+      // armgroup.setMaxVelocityScalingFactor(0.5);
+      ROS_INFO_STREAM("Lifting the Object....");
+      lift();
+      // armgroup.setMaxAccelerationScalingFactor(0.2);
+      // armgroup.setMaxVelocityScalingFactor(0.8);
+      // ROS_INFO_STREAM("Going back to home position....");
+      // goHome();
+    } else {
+      goInitial();
+      ros::WallDuration(1.0).sleep();
+      state.pick_state = state.READY_FOR_PICK;
+      state.pick_index = -1;
+      arm_pub.publish(state);
+    }
   } else {
-    goHome();
-    ros::WallDuration(1.0).sleep();
-    state.pick_state = state.READY_FOR_PICK;
-    state.pick_index = -1;
-    arm_pub.publish(state);
+    readInToMatrix(
+        "/home/gjx/orbslam/catkin_ws/grasp_multiObject_multiGrasp/data/demo/"
+        "result/0000_color.jpg.txt");
+    if (dl_data.size()) {
+      this->target_pos.push_back(dl_data.back()[0]);
+      this->target_pos.push_back(dl_data.back()[1]);
+      this->target_pos.push_back(dl_height);  // -0.15
+      this->pick_index = dl_data.size();
+      this->target_num = dl_data.size();
+      attainObject();
+      ROS_INFO_STREAM("Attempting to Grasp the Object now..");
+      grasp();
+      ROS_INFO_STREAM("Lifting the Object....");
+      lift();
+      dl_data.pop_back();
+    } else {
+      goHome();
+      ros::WallDuration(1.0).sleep();
+    }
   }
   grasp_running = false;
 }
-
+void GraspingDemo::readInToMatrix(string FilePath) {
+  fstream in;
+  in.open(FilePath, ios::in);  //打开一个file
+  if (!in.is_open()) {
+    cout << "Can not find " << FilePath << endl;
+    system("pause");
+  }
+  string buff;
+  int i = 0;  //行数i
+  while (getline(in, buff)) {
+    vector<double> nums;
+    // string->char *
+    char *s_input = (char *)buff.c_str();
+    const char *split = "，";
+    // 以‘，’为分隔符拆分字符串
+    char *p = strtok(s_input, split);
+    double a;
+    while (p != NULL) {
+      // char * -> int
+      a = atof(p);
+      // cout << a << endl;
+      nums.push_back(a);
+      p = strtok(NULL, split);
+    }  // end while
+    dl_data.push_back(nums);
+  }  // end while
+  in.close();
+  cout << "get  data" << endl;
+  cout << dl_data.size() << endl;
+}
 int main(int argc, char **argv) {
   ros::init(argc, argv, "simple_grasping");
   float length, breadth, pregrasp_x, pregrasp_y, pregrasp_z;
@@ -517,9 +622,6 @@ int main(int argc, char **argv) {
 
   if (!n.getParam("probot_grasping/table_length", length)) length = 0.3;
   if (!n.getParam("probot_grasping/table_breadth", breadth)) breadth = 0.3;
-  if (!n.getParam("probot_grasping/pregrasp_x", pregrasp_x)) pregrasp_x = 0.20;
-  if (!n.getParam("probot_grasping/pregrasp_y", pregrasp_y)) pregrasp_y = -0.17;
-  if (!n.getParam("probot_grasping/pregrasp_z", pregrasp_z)) pregrasp_z = 0.28;
 
   GraspingDemo simGrasp(n, pregrasp_x, pregrasp_y, pregrasp_z, length, breadth);
 
@@ -529,6 +631,9 @@ int main(int argc, char **argv) {
   //   simGrasp.grasp_y = 0.06;
   // if (!n.getParam("probot_grasping/grasp_z", simGrasp.grasp_x))
   //   simGrasp.grasp_z = 0.03;
+  ros::param::get("~pregrasp_x", simGrasp.pregrasp_x);
+  ros::param::get("~pregrasp_y", simGrasp.pregrasp_y);
+  ros::param::get("~pregrasp_z", simGrasp.pregrasp_z);
   ros::param::get("~grasp_x", simGrasp.grasp_x);
   ros::param::get("~grasp_y", simGrasp.grasp_y);
   ros::param::get("~hor_grasp_z", simGrasp.hor_grasp_z);
@@ -540,6 +645,11 @@ int main(int argc, char **argv) {
   ros::param::get("~simulation", simGrasp.simulation);
   ros::param::get("~side_min", simGrasp.side_min);
   ros::param::get("~side_max", simGrasp.side_max);
+  ros::param::get("~MODE", simGrasp.MODE);
+  ros::param::get("~dl_height", simGrasp.dl_height);
+  ros::param::get("~dx", simGrasp.dx);
+  ros::param::get("~dy", simGrasp.dy);
+  ros::param::get("~dz", simGrasp.dz);
 
   ROS_WARN("grasp info : %f, %f,%f", simGrasp.grasp_x, simGrasp.grasp_y,
            simGrasp.ver_grasp_z);

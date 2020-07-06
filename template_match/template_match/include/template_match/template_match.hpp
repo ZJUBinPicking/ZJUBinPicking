@@ -255,7 +255,7 @@ class template_match {
   double model_size, voxel_grid_size, normal_radius_, feature_radius_;
   int object_index = 0;
   double theta, dx, dy, dz, side_min, side_max;
-  double min_sample_distance, max_correspondence_distance, nr_iterations;
+  double min_sample_distance, max_correspondence_distance, nr_iterations,planar_seg;
   int arm_state;
   int max_num, min_num;
   int object_num = 0;

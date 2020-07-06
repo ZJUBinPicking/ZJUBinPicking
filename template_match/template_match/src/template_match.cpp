@@ -65,15 +65,16 @@ void template_match::init() {
   ros::param::get("~nr_iterations", nr_iterations);
   ros::param::get("~normal_radius_", normal_radius_);
   ros::param::get("~feature_radius_", feature_radius_);
+  ros::param::get("~planar_seg", planar_seg);
 
   if (simulation && vision_simulation) {
-    bat_sub = nh.subscribe("/kinect2/hd/points", 1, &template_match::cloudCB,
+    bat_sub = nh.subscribe("/kinect2/sd/points", 1, &template_match::cloudCB,
                            this);  //接收点云
   } else if (simulation && !vision_simulation) {
     bat_sub = nh.subscribe("/camera/depth/points", 1, &template_match::cloudCB,
                            this);  //接收点云
   } else if (!simulation) {
-    bat_sub = nh.subscribe("/kinect2/hd/points", 1, &template_match::cloudCB,
+    bat_sub = nh.subscribe("/kinect2/sd/points", 1, &template_match::cloudCB,
                            this);  //接收点云
   }
 
@@ -150,7 +151,7 @@ void template_match::showCloud(pcl::PointCloud<PointT>::Ptr cloud1,
   viewer->createViewPort(0.5, 0.0, 1.0, 1.0, v2);
   viewer->addPointCloud<pcl::PointXYZ>(cloud2, "sample cloud2", v2);
   viewer->setBackgroundColor(0.3, 0.3, 0.3, v2);
-  // viewer->addCoordinateSystem(1.0);
+  viewer->addCoordinateSystem(1.0);
 
   viewer->initCameraParameters();
   while (!viewer->wasStopped()) {
@@ -337,7 +338,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr template_match::planar_segmentation(
   seg.setOptimizeCoefficients(true);
   seg.setModelType(pcl::SACMODEL_PLANE);
   seg.setMethodType(pcl::SAC_RANSAC);
-  seg.setDistanceThreshold(0.01);
+  seg.setDistanceThreshold(planar_seg);
   seg.setInputCloud(cloud);
   seg.segment(*inliers, *coefficients);
 

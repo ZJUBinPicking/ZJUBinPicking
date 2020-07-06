@@ -112,7 +112,6 @@ class GraspingDemo {
    * arm
    */
 
-  float pregrasp_x, pregrasp_y, pregrasp_z;
   /**
    * @brief      attainPosition achieved the given position of the arm
    *
@@ -136,22 +135,28 @@ class GraspingDemo {
   void lift();
 
  public:
+  int MODE;
+  float pregrasp_x, pregrasp_y, pregrasp_z;
   ros::Publisher arm_pub;
   ros::Subscriber trans_sub;
   bpmsg::pose result_pos;
   bpmsg::arm_state state;
   double hor_grasp_z, ver_grasp_z, side_max, side_min;
+  double dx, dy, dz;
   double grasp_y;
-  double grasp_x, real_z;
+  double grasp_x, real_z, dl_height;
   double change_angle;
   double hor_ratio;
   double ver_ratio;
   int pick_index = INT_MAX;
+  vector<double> home_value;
   std::vector<double> target_pos;
   std::vector<double> target_angle;
+  vector<vector<double>> dl_data;
   int target_num = 0, simulation;
   int detect_state = 0;
   void posCb(bpmsg::pose msg);
+  void goInitial();
   /**
    * @brief      GraspingDemo behaviour Constructor
    *
@@ -178,6 +183,7 @@ class GraspingDemo {
    * @brief      Function brings the arm back to home configuration
    */
   void goHome();
+  void readInToMatrix(string FilePath);
 };
 
 #endif
