@@ -130,8 +130,8 @@ void DBSCAN::find_independent() {
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr result_cloud(
       new pcl::PointCloud<pcl::PointXYZRGB>);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cluster_center(
-      new pcl::PointCloud<pcl::PointXYZ>);
+  this->cluster_center =
+      pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
   for (auto i = 0; i < core_points.size(); i++) {
     if (neighbourPoints[core_points[i]].size() == 0 ||
         neighbourPoints[core_points[i]].size() < 200)
@@ -194,7 +194,7 @@ void DBSCAN::find_independent() {
       vector<int> indices;
       vector<float> dists;
       kdtree.nearestKSearch(cluster_center->points[i],
-                            int(cluster_center->points.size() / 2), indices,
+                            int(cluster_center->points.size() / 2) + 1, indices,
                             dists);
       double sum = 0;
       for (auto dist : dists) {
@@ -213,27 +213,29 @@ void DBSCAN::find_independent() {
     cout << cluster_score[i].dense_index << "  " << cluster_score[i].dense
          << " " << cluster_score[i].index << endl;
   }
-  boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(
-      new pcl::visualization::PCLVisualizer("3D Viewer"));
-  int v1(0);
-  viewer->createViewPort(0.0, 0.0, 0.5, 1.0, v1);
-  viewer->setBackgroundColor(0, 0, 0, v1);
-  viewer->addPointCloud<pcl::PointXYZRGB>(result_cloud, "sample cloud1", v1);
+  if (view_on) {
+    boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(
+        new pcl::visualization::PCLVisualizer("3D Viewer"));
+    int v1(0);
+    viewer->createViewPort(0.0, 0.0, 0.5, 1.0, v1);
+    viewer->setBackgroundColor(0, 0, 0, v1);
+    viewer->addPointCloud<pcl::PointXYZRGB>(result_cloud, "sample cloud1", v1);
 
-  int v2(0);
-  viewer->createViewPort(0.5, 0.0, 1.0, 1.0, v2);
-  viewer->addPointCloud<pcl::PointXYZ>(origin_cloud_, "sample cloud2", v2);
-  viewer->setBackgroundColor(0.3, 0.3, 0.3, v2);
-  // viewer->addCoordinateSystem(1.0);
+    int v2(0);
+    viewer->createViewPort(0.5, 0.0, 1.0, 1.0, v2);
+    viewer->addPointCloud<pcl::PointXYZ>(origin_cloud_, "sample cloud2", v2);
+    viewer->setBackgroundColor(0.3, 0.3, 0.3, v2);
+    // viewer->addCoordinateSystem(1.0);
 
-  viewer->initCameraParameters();
-  for (int i = 0; i < cluster_centroid.size(); i++)
-    viewerOneOff(*viewer, cluster_centroid[i][0], cluster_centroid[i][1],
-                 cluster_centroid[i][2], "point" + i);
-  while (!viewer->wasStopped()) {
-    viewer->spinOnce(100);
-    // boost::this_thread::sleep(boost::posix_time::microseconds(100000));
-  };
+    viewer->initCameraParameters();
+    for (int i = 0; i < cluster_centroid.size(); i++)
+      viewerOneOff(*viewer, cluster_centroid[i][0], cluster_centroid[i][1],
+                   cluster_centroid[i][2], "point" + i);
+    while (!viewer->wasStopped()) {
+      viewer->spinOnce(100);
+      // boost::this_thread::sleep(boost::posix_time::microseconds(100000));
+    };
+  }
 }
 // int main() {
 //   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new

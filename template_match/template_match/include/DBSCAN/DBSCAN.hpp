@@ -49,11 +49,12 @@ class DBSCAN {
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_;
   pcl::PointCloud<pcl::PointXYZ>::Ptr origin_cloud_;
   vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> result_cloud_;
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cluster_center;
   vector<int> cluster_type;
   vector<int> core_points;
   vector<int> bound_points;
   vector<int> result_points;
-
+  bool view_on;
   vector<Eigen::Vector4f> cluster_centroid;
   int method_ = 0;
   int use_edge = 1;

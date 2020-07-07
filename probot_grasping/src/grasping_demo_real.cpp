@@ -562,6 +562,9 @@ void GraspingDemo::initiateGrasping() {
       // armgroup.setMaxVelocityScalingFactor(0.8);
       // ROS_INFO_STREAM("Going back to home position....");
       // goHome();
+      state.pick_state = state.READY_FOR_PICK;
+      state.pick_index = this->pick_index;
+      arm_pub.publish(state);
     } else {
       goInitial();
       ros::WallDuration(1.0).sleep();

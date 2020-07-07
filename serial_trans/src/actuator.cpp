@@ -19,9 +19,9 @@ std_msgs::Bool gripper_signal;
 void GripperCallback(const control_msgs::FollowJointTrajectoryActionGoal& msg) {
   if (msg.goal.trajectory.points.size() >= 2) {
     if (msg.goal.trajectory.points[1].velocities[0] > 0) {
-      gripper_signal.data = 1;
-    } else if (msg.goal.trajectory.points[1].velocities[0] < 0) {
       gripper_signal.data = 0;
+    } else if (msg.goal.trajectory.points[1].velocities[0] < 0) {
+      gripper_signal.data = 1;
     } else
       return;
   }
@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
     ros::spinOnce();
     //发布0，夹爪张开，或吸盘释放
     // suction_signal.data = 0;
-    if (gripper_signal.data == 0) {
+    if (gripper_signal.data == 1) {
       // suction_pub.publish(suction_signal);
       gripper_pub.publish(gripper_signal);
       std::cout << "stop" << std::endl;
@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
     }
     //发布1，夹爪闭合，或吸盘吸取
     // suction_signal.data = 1;
-    if (gripper_signal.data == 1) {
+    if (gripper_signal.data == 0) {
       // suction_pub.publish(suction_signal);
       gripper_pub.publish(gripper_signal);
       std::cout << "activate" << std::endl;

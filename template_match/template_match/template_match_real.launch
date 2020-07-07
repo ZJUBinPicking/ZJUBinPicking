@@ -26,6 +26,7 @@
 	<param name="side_min"  type="double" value="-0.1"/>
 	<param name="side_max"  type="double" value="0.15"/>
 	<param name="voxel_grid_size"  type="double" value="0.003"/>
+	<param name="adaptive_threshold"  type="double" value="0.001"/>
 	<param name="max_num"  type="int" value="20000"/>
 	<param name="min_num"  type="int" value="150"/>
 	<param name="view_on"  type="bool" value="0"/>

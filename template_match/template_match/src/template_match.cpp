@@ -70,7 +70,7 @@ void template_match::init() {
   ros::param::get("~normal_radius_", normal_radius_);
   ros::param::get("~feature_radius_", feature_radius_);
   ros::param::get("~planar_seg", planar_seg);
-
+  ros::param::get("~adaptive_threshold", adaptive_threshold);
   if (simulation && vision_simulation) {
     bat_sub = nh.subscribe("/kinect2/sd/points", 1, &template_match::cloudCB,
                            this);  //接收点云
@@ -195,6 +195,8 @@ void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
   pass.setFilterLimits(min_z, max_z);   //设置在过滤字段的范围
   pass.setFilterLimitsNegative(false);  //保留还是过滤掉范围内的点
   pass.filter(*cloud_filtered);
+  detect_flag = 0;
+  if_match = 0;
   // when gazebo simulation, not filter
   if (!simulation) {
     // std::cout << "before: The points data:  " <<
@@ -237,7 +239,7 @@ void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
               << std::endl;
     // showCloud(cloud_filtered, mycloud);
 
-    trans_pub.publish(result_pose);
+    // trans_pub.publish(result_pose);
     dbscan_cluster(cloud_filtered, mycloud);
     // match(cloud_filtered, mycloud);
   }
@@ -252,11 +254,37 @@ void template_match::dbscan_cluster(
     pcl::PointCloud<PointT>::Ptr cloud_,
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_2) {
   DBSCAN cluster(cloud_, 0.010f, 40);  // 0.011f, 50
+  cluster.view_on = this->view_on;
   cluster.start_scan();
   goals = cluster.result_cloud_;
   cout << goals.size() << endl;
   this->cluster_score = cluster.cluster_score;
-  for (int i = 0; i < goals.size(); i++) {
+
+  if (first_flag) {
+    pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
+    kdtree.setInputCloud(this->last_center);
+    for (int i = 0; i < cluster.cluster_center->points.size(); i++) {
+      vector<int> indices;
+      vector<float> dists;
+      kdtree.nearestKSearch(cluster.cluster_center->points[i], 1, indices,
+                            dists);
+      cout << "distance!!!" << dists[0] << endl;
+      if (dists[0] > adaptive_threshold) {
+        cout << "need to match" << endl;
+        if_match = 1;
+        detect_flag = 1;
+        cluster_score.clear();
+        target_angle.clear();
+        target_pos.clear();
+      } else {
+        cout << "no need to match" << endl;
+        if_match = 0;
+        detect_flag = 1;
+      }
+    }
+  }
+  for (int i = 0;
+       i < goals.size() && ((if_match && detect_flag) || !first_flag); i++) {
     cout << "The " << i << " cluster" << endl;
     cout << "PointCloud representing the Cluster: " << goals[i]->points.size()
          << " data points." << endl;
@@ -271,6 +299,8 @@ void template_match::dbscan_cluster(
     cout << target_pos[i](2) << " " << target_angle[i](2) << endl;
     // }
   }
+  first_flag = 1;
+  this->last_center = cluster.cluster_center;
   cout << goals.size() << endl;
   object_num = goals.size();
   com_flag = 1;
@@ -771,9 +801,20 @@ void template_match::mainloop() {
         else
           result_pose.if_detect = result_pose.NOTHING;
 
-        while (this->pick_index != cluster_score[j].index) {
+        while (this->pick_index != cluster_score[j].index || arm_state == 1) {
           ros::spinOnce();
           trans_pub.publish(result_pose);
+        }
+        while (!detect_flag) {
+          ros::spinOnce();
+          result_pose.if_detect = 0;
+          trans_pub.publish(result_pose);
+          com_flag = 0;
+        }
+        if (!if_match) {
+          continue;
+        } else {
+          break;
         }
       }
       // height_map.clear();

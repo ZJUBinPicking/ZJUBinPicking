@@ -256,13 +256,14 @@ class template_match {
   int object_index = 0;
   double theta, dx, dy, dz, side_min, side_max;
   double min_sample_distance, max_correspondence_distance, nr_iterations,
-      planar_seg;
+      planar_seg, adaptive_threshold;
   int arm_state;
   int max_num, min_num;
   int object_num = 0;
   int com_flag = 0;
   int pick_index;
-  bool view_on;
+  bool if_match = 0;
+  bool view_on, detect_flag, first_flag = 0;
   bool simulation, vision_simulation, save_filter;
   clock_t start, end;
   string model_file_, model_file_2, model_file_1;
@@ -283,7 +284,7 @@ class template_match {
   vector<cluster> cluster_score;
   pcl::PointCloud<pcl::PointXYZ>::Ptr model_pipe;
   pcl::PointCloud<pcl::PointXYZ>::Ptr model_cylinder;
-
+  pcl::PointCloud<pcl::PointXYZ>::Ptr last_center;
   // pcl::PointCloud<PointT>::Ptr cloud_;
   // vector<double> height_map;
 
