@@ -255,7 +255,8 @@ class template_match {
   double model_size, voxel_grid_size, normal_radius_, feature_radius_;
   int object_index = 0;
   double theta, dx, dy, dz, side_min, side_max;
-  double min_sample_distance, max_correspondence_distance, nr_iterations,planar_seg;
+  double min_sample_distance, max_correspondence_distance, nr_iterations,
+      planar_seg;
   int arm_state;
   int max_num, min_num;
   int object_num = 0;
@@ -279,12 +280,13 @@ class template_match {
   ros::Subscriber arm_sub;
   ros::Publisher trans_pub;
   bpmsg::pose result_pose;
+  vector<cluster> cluster_score;
   pcl::PointCloud<pcl::PointXYZ>::Ptr model_pipe;
   pcl::PointCloud<pcl::PointXYZ>::Ptr model_cylinder;
 
   // pcl::PointCloud<PointT>::Ptr cloud_;
-  map<int, double> height_map;
-  map<int, double> height_map_side;
+  // vector<double> height_map;
+
   vector<pcl::PointCloud<PointT>::Ptr> goals;
   // vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> t_cloud;
   std::vector<FeatureCloud> object_templates;

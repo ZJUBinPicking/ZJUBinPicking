@@ -23,7 +23,7 @@
         <param name="MODE"            value="0"/>
         <param name="dl_height"            value="0.35"/>
         <param name="dx"            value="0.34"/>
-        <param name="dy"            value="-0.05"/>
+        <param name="dy"            value="0.05"/>
         <param name="dz"            value="0.69"/>
     
          <!-- 0.06 -0.012-->

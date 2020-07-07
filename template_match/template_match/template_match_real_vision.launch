@@ -28,9 +28,9 @@
 	<param name="voxel_grid_size"  type="double" value="0.003"/>
 	<param name="max_num"  type="int" value="20000"/>
 	<param name="min_num"  type="int" value="150"/>
-	<param name="view_on"  type="bool" value="0"/>
+	<param name="view_on"  type="bool" value="1"/>
 	<param name="save_filter"  type="bool" value="1"/>
-	<param name="vision_simulation"  type="bool" value="0"/>
+	<param name="vision_simulation"  type="bool" value="1"/>
 	<param name="simulation"  type="bool" value="0"/>
 	<param name="model_file_"  type="string" value="/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/real_threepipe1091.pcd"/>
 	<param name="model_file_1"  type="string" value="/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/project837.pcd"/>
@@ -41,7 +41,7 @@
 	<param name="file_location"  type="string" value="/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/filter_1.pcd"/>
 	</node> -->
 	<node pkg="template_match" type="output_clouds" name="output_clouds" output="screen">
-	<param name="file_location"  type="string" value="/media/gjx/GJX/DL_dataset/pointclouds/0030_cloud.pcd"/>
+	<param name="file_location"  type="string" value="/media/gjx/GJX/DL_dataset/pointclouds/0000_cloud.pcd"/>
 	</node>
 	<!-- <node pkg="template_match" type="dbscan" name="dbscan" output="screen">
 	<param name="file_location"  type="string" value="/media/gjx/GJX/DL_dataset/pointclouds/0065_cloud.pcd"/>

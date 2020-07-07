@@ -1,3 +1,4 @@
+#include <pcl/common/centroid.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/octree/octree.h>
@@ -8,10 +9,24 @@
 
 #include <ctime>
 #include <iostream>
+#include <numeric>
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #include <vector>
+
 using namespace pcl;
 using namespace std;
-
+using namespace cv;
+struct cluster {
+  int index;
+  int dense_index;
+  double dense;
+  int height_index;
+  double height;
+  int pose_index;
+  double pose;
+  double score;
+};
 class DBSCAN {
  public:
   DBSCAN(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, double eps, double MinPts)
@@ -38,6 +53,8 @@ class DBSCAN {
   vector<int> core_points;
   vector<int> bound_points;
   vector<int> result_points;
+
+  vector<Eigen::Vector4f> cluster_centroid;
   int method_ = 0;
   int use_edge = 1;
   const int CORE_POINT = 0;
@@ -45,6 +62,7 @@ class DBSCAN {
   const int NOISE_POINT = 2;
   const int KD_TREE = 0;
   const int OCT_TREE = 1;
+  vector<cluster> cluster_score;
   std::vector<std::vector<int>> neighbourPoints;
   std::vector<std::vector<float>> neighbourDistance;
   void start_scan();

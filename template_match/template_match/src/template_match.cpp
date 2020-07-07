@@ -1,8 +1,12 @@
 #include "template_match/template_match.hpp"
 int user_data;
-bool cmp(const pair<int, double> &a, const pair<int, double> &b) {
-  return a.second < b.second;
-}
+// bool cmp(const pair<int, double> &a, const pair<int, double> &b) {
+//   return a.second < b.second;
+// }
+bool cmp_1(cluster &a, cluster &b) { return a.height < b.height; }
+bool cmp_2(cluster &a, cluster &b) { return a.pose < b.pose; }
+bool cmp_3(cluster &a, cluster &b) { return a.score < b.score; }
+
 // 0 0.015 0.015
 // 0.016 0.015 0.017
 
@@ -193,8 +197,9 @@ void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
   pass.filter(*cloud_filtered);
   // when gazebo simulation, not filter
   if (!simulation) {
-    std::cout << "before: The points data:  " << cloud_filtered->points.size()
-              << std::endl;
+    // std::cout << "before: The points data:  " <<
+    // cloud_filtered->points.size()
+    //           << std::endl;
     // const float voxel_grid_size = 0.005f;
     pcl::VoxelGrid<pcl::PointXYZ> vox_grid;
     vox_grid.setInputCloud(cloud_filtered);
@@ -207,8 +212,8 @@ void template_match::cloudCB(const sensor_msgs::PointCloud2 &input) {
       showCloud(tempCloud, mycloud);
     }
     cloud_filtered = planar_segmentation(tempCloud);
-    std::cout << "after: The points data:  " << cloud_filtered->points.size()
-              << std::endl;
+    // std::cout << "after: The points data:  " << cloud_filtered->points.size()
+    //           << std::endl;
   }
   if (view_on) {
     // showCloud(cloud_filtered, mycloud);
@@ -250,18 +255,21 @@ void template_match::dbscan_cluster(
   cluster.start_scan();
   goals = cluster.result_cloud_;
   cout << goals.size() << endl;
+  this->cluster_score = cluster.cluster_score;
   for (int i = 0; i < goals.size(); i++) {
     cout << "The " << i << " cluster" << endl;
     cout << "PointCloud representing the Cluster: " << goals[i]->points.size()
          << " data points." << endl;
     start = clock();
     match(goals[i], cloud_, model_pipe, 0);
-    if (target_pos[i](0) <= side_min || target_pos[i](0) >= side_max) {
-      height_map_side.insert(make_pair(i, target_pos[i](2)));
-      ROS_ERROR("side object!!!!!");
-    } else {
-      height_map.insert(make_pair(i, target_pos[i](2)));
-    }
+    // if (target_pos[i](0) <= side_min || target_pos[i](0) >= side_max) {
+    //   height_map_side.insert(make_pair(i, target_pos[i](2)));
+    //   ROS_ERROR("side object!!!!!");
+    // } else {
+    this->cluster_score[i].height = target_pos[i](2);
+    this->cluster_score[i].pose = target_angle[i](2);
+    cout << target_pos[i](2) << " " << target_angle[i](2) << endl;
+    // }
   }
   cout << goals.size() << endl;
   object_num = goals.size();
@@ -318,12 +326,14 @@ void template_match::kmeans_cluster(
     cout << goals.size() << endl;
     for (int i = 0; i < goals.size(); i++) {
       match(goals[i], cloud_2, model_pipe, j);
-      if (target_pos[i](0) <= side_min || target_pos[i](0) >= side_max) {
-        height_map_side.insert(make_pair(i, target_pos[i](2)));
-        ROS_ERROR("side object!!!!!");
-      } else {
-        height_map.insert(make_pair(j, target_pos[i](2)));
-      }
+      // if (target_pos[i](0) <= side_min || target_pos[i](0) >= side_max) {
+      //   height_map_side.insert(make_pair(i, target_pos[i](2)));
+      //   ROS_ERROR("side object!!!!!");
+      // } else {
+      //   height_map.insert(make_pair(j, target_pos[i](2)));
+      // }
+      this->cluster_score[i].height = target_pos[i](2);
+      this->cluster_score[i].pose = target_angle[i](2);
     }
     cout << goals.size() << endl;
     object_num = goals.size();
@@ -342,14 +352,15 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr template_match::planar_segmentation(
   seg.setInputCloud(cloud);
   seg.segment(*inliers, *coefficients);
 
-  if (inliers->indices.size() == 0) {
-    PCL_ERROR("Could not estimate a planar model for the given dataset.");
-  }
-  std::cerr << "Model coefficients: " << coefficients->values[0] << " "
-            << coefficients->values[1] << " " << coefficients->values[2] << " "
-            << coefficients->values[3] << std::endl;
+  // if (inliers->indices.size() == 0) {
+  //   PCL_ERROR("Could not estimate a planar model for the given dataset.");
+  // }
+  // std::cerr << "Model coefficients: " << coefficients->values[0] << " "
+  //           << coefficients->values[1] << " " << coefficients->values[2] << "
+  //           "
+  //           << coefficients->values[3] << std::endl;
 
-  std::cerr << "Model inliers: " << inliers->indices.size() << std::endl;
+  // std::cerr << "Model inliers: " << inliers->indices.size() << std::endl;
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster(
       new pcl::PointCloud<pcl::PointXYZ>);
@@ -707,34 +718,67 @@ void template_match::mainloop() {
     // cout << "666" << endl;
     ros::spinOnce();
     if (com_flag) {
-      vector<pair<int, double>> vec(height_map.begin(), height_map.end());
-      vector<pair<int, double>> vec2(height_map_side.begin(),
-                                     height_map_side.end());
+      // vector<pair<int, double>> vec(height_map.begin(), height_map.end());
+      // vector<pair<int, double>> vec2(height_map_side.begin(),
+      //                                height_map_side.end());
       //对线性的vector进行排序
-      sort(vec.begin(), vec.end(), cmp);
-      sort(vec2.begin(), vec2.end(), cmp);
-      vec.insert(vec.end(), vec2.begin(), vec2.end());
-      for (int j = 0; j < vec.size(); ++j) {
-        // cout << vec[j].first << "  " << vec[j].second << endl;
-        ROS_WARN("vec index: %d vec height: %f", vec[j].first, vec[j].second);
+      if (cluster_score.size() > 1) {
+        sort(cluster_score.begin(), cluster_score.end(), cmp_1);
+        for (int i = 0; i < cluster_score.size(); i++) {
+          cluster_score[i].height_index = i + 1;
+          cout << cluster_score[i].height_index << "  "
+               << cluster_score[i].height << " " << cluster_score[i].index
+               << endl;
+        }
+        sort(cluster_score.begin(), cluster_score.end(), cmp_2);
+        for (int i = 0; i < cluster_score.size(); i++) {
+          cluster_score[i].pose_index = i + 1;
+          cout << cluster_score[i].pose_index << "  " << cluster_score[i].pose
+               << " " << cluster_score[i].index << endl;
+        }
+        for (int i = 0; i < cluster_score.size(); i++) {
+          cluster_score[i].score = cluster_score[i].dense_index * 0.2 +
+                                   cluster_score[i].height_index * 0.6 +
+                                   cluster_score[i].pose_index * 0.2;
+        }
+        sort(cluster_score.begin(), cluster_score.end(), cmp_3);
+      }
+      for (int j = 0; j < cluster_score.size(); ++j) {
+        ROS_INFO(
+            "follow the score rank: %d, index: %d, score: %f, height: %d %f, "
+            "dense: %d %f, pose: %d %f ",
+            j, cluster_score[j].index, cluster_score[j].score,
+            cluster_score[j].height_index, cluster_score[j].height,
+            cluster_score[j].dense_index, cluster_score[j].dense,
+            cluster_score[j].pose_index, cluster_score[j].pose);
+      }
+      for (int j = 0; j < cluster_score.size(); ++j) {
+        ROS_WARN(
+            "follow the score rank: %d, index: %d, score: %f, height: %d %f, "
+            "dense: %d %f, pose: %d %f ",
+            j, cluster_score[j].index, cluster_score[j].score,
+            cluster_score[j].height_index, cluster_score[j].height,
+            cluster_score[j].dense_index, cluster_score[j].dense,
+            cluster_score[j].pose_index, cluster_score[j].pose);
         for (int i = 0; i < 3; i++) {
-          result_pose.target_pos[i] = target_pos[vec[j].first](i);
-          result_pose.target_angle[i] = target_angle[vec[j].first](i);
+          result_pose.target_pos[i] = target_pos[cluster_score[j].index](i);
+          result_pose.target_angle[i] = target_angle[cluster_score[j].index](i);
         }
         result_pose.object_num = object_num;
-        result_pose.target_index = vec[j].first;
+        result_pose.target_index = cluster_score[j].index;
         if (object_num)
           result_pose.if_detect = result_pose.DETECTSUCCESS;
         else
           result_pose.if_detect = result_pose.NOTHING;
 
-        while (this->pick_index != vec[j].first) {
+        while (this->pick_index != cluster_score[j].index) {
           ros::spinOnce();
           trans_pub.publish(result_pose);
         }
       }
-      height_map.clear();
-      height_map_side.clear();
+      // height_map.clear();
+      // height_map_side.clear();
+      cluster_score.clear();
       target_angle.clear();
       target_pos.clear();
       com_flag = 0;

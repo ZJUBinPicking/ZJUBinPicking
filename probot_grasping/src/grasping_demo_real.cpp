@@ -363,22 +363,22 @@ void GraspingDemo::lift() {
   // ROS_INFO("The lift function called");
 
   // For getting the pose
-  geometry_msgs::PoseStamped currPose = armgroup.getCurrentPose();
-  ros::WallDuration(0.5).sleep();
-  geometry_msgs::Pose target_pose1;
-  tf2::Quaternion orientation;
-  currPose = armgroup.getCurrentPose();
-  orientation.setRPY(1.57, 1.57, 1.57);
-  target_pose1.orientation.x = orientation.getX();
-  target_pose1.orientation.y = orientation.getY();
-  target_pose1.orientation.z = orientation.getZ();
-  target_pose1.orientation.w = orientation.getW();
-  target_pose1.position = currPose.pose.position;
+  // geometry_msgs::PoseStamped currPose = armgroup.getCurrentPose();
+  // ros::WallDuration(0.5).sleep();
+  // geometry_msgs::Pose target_pose1;
+  // tf2::Quaternion orientation;
+  // currPose = armgroup.getCurrentPose();
+  // orientation.setRPY(1.57, 1.57, 1.57);
+  // target_pose1.orientation.x = orientation.getX();
+  // target_pose1.orientation.y = orientation.getY();
+  // target_pose1.orientation.z = orientation.getZ();
+  // target_pose1.orientation.w = orientation.getW();
+  // target_pose1.position = currPose.pose.position;
 
-  // Starting Postion after picking
-  target_pose1.position.z = pregrasp_z;
-  armgroup.setPoseTarget(target_pose1);
-  armgroup.move();
+  // // Starting Postion after picking
+  // target_pose1.position.z = pregrasp_z;
+  // armgroup.setPoseTarget(target_pose1);
+  // armgroup.move();
   // currPose = armgroup.getCurrentPose();
   // geometry_msgs::Pose target_pose2;
   // target_pose2.position = currPose.pose.position;
@@ -390,10 +390,16 @@ void GraspingDemo::lift() {
   // target_pose2.orientation.z = orientation.getZ();
   // target_pose2.orientation.w = orientation.getW();
   vector<double> joint_value(6);
+  vector<double> temp(6);
+  joint_value = home_value;
+  joint_value[0] = armgroup.getCurrentJointValues()[0];
+  armgroup.setJointValueTarget(joint_value);
+  armgroup.move();
   /*
   joint_value = armgroup.getCurrentJointValues();
 
-  // joint_value[0] > 0 ? joint_value[0] = CV_PI / 6 : joint_value[0] = -CV_PI
+  // joint_value[0] > 0 ? joint_value[0] = CV_PI / 6 : joint_value[0] =
+  -CV_PI
   /
   // 6;
 
@@ -422,7 +428,7 @@ void GraspingDemo::lift() {
   // armgroup.setPoseTarget(target_pose2);
   // armgroup.move();
   ros::WallDuration(0.5).sleep();*/
-  joint_value = armgroup.getCurrentJointValues();
+
   // joint_value[0] = -CV_PI / 6;
   // if (joint_value[0] >= 0 && joint_value[0] < CV_PI)
   //   joint_value[0] = CV_PI / 6;  // joint_value[0]
@@ -438,6 +444,7 @@ void GraspingDemo::lift() {
   double res = joint_value[0] - k * CV_PI;
   // res > 0 ? joint_value[0] = k * CV_PI + CV_PI / 5
   //         : joint_value[0] = k * CV_PI - CV_PI / 5;
+  joint_value = home_value;
   joint_value[0] = k * CV_PI + CV_PI / 3;
   // joint_value[0] > 0 ? joint_value[0] = CV_PI / 6 : joint_value[0] = -CV_PI
   // / 6;

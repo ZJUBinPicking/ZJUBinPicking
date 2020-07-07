@@ -1,4 +1,14 @@
 #include "DBSCAN/DBSCAN.hpp"
+bool cmp(cluster &a, cluster &b) { return a.dense > b.dense; }
+void viewerOneOff(pcl::visualization::PCLVisualizer &viewer, double x, double y,
+                  double z, string name) {
+  pcl::PointXYZ o;
+  o.x = x;
+  o.y = y;
+  o.z = z;
+  viewer.addSphere(o, 0.001, 255, 0, 0, name, 0);
+}
+
 void showCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud1,
                pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2) {
   boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(
@@ -15,10 +25,6 @@ void showCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud1,
   // viewer->addCoordinateSystem(1.0);
 
   viewer->initCameraParameters();
-  while (!viewer->wasStopped()) {
-    viewer->spinOnce(100);
-    // boost::this_thread::sleep(boost::posix_time::microseconds(100000));
-  };
 }
 void DBSCAN::start_scan() {
   start = clock();
@@ -124,6 +130,8 @@ void DBSCAN::find_independent() {
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr result_cloud(
       new pcl::PointCloud<pcl::PointXYZRGB>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cluster_center(
+      new pcl::PointCloud<pcl::PointXYZ>);
   for (auto i = 0; i < core_points.size(); i++) {
     if (neighbourPoints[core_points[i]].size() == 0 ||
         neighbourPoints[core_points[i]].size() < 200)
@@ -137,6 +145,7 @@ void DBSCAN::find_independent() {
     int B = rand() % 255;
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster(
         new pcl::PointCloud<pcl::PointXYZ>);
+
     for (auto j = 0; j < neighbourPoints[core_points[i]].size(); j++) {
       pcl::PointXYZRGB point;
       point.r = R;
@@ -152,23 +161,79 @@ void DBSCAN::find_independent() {
     cloud_cluster->width = cloud_cluster->points.size();
     cloud_cluster->height = 1;
     cloud_cluster->is_dense = true;
+    Eigen::Vector4f centroid;
+    pcl::compute3DCentroid(*cloud_cluster, centroid);
+    // std::cout << "The XYZ coordinates of the centroid are: (" << centroid[0]
+    //           << ", " << centroid[1] << ", " << centroid[2] << ")."
+    //           << std::endl;
+    cluster_center->points.push_back(
+        pcl::PointXYZ(centroid[0], centroid[1], centroid[2]));
+    cluster_centroid.push_back(centroid);
     this->result_cloud_.push_back(cloud_cluster);
   }
-
+  cluster_center->width = cluster_center->points.size();
+  cluster_center->height = 1;
+  cluster_center->is_dense = true;
   cout << "the sum of clusters: " << this->result_cloud_.size() << endl;
   result_cloud->width = result_cloud->points.size();
   result_cloud->height = 1;
   result_cloud->is_dense = true;
-  // pcl::visualization::PCLVisualizer viewer("example");
-  // viewer.addPointCloud<pcl::PointXYZRGB>(result_cloud, "result");
-  // while (!viewer.wasStopped()) {
-  //   viewer.spinOnce();
-  // }
+
   end = clock();
   double endtime = (double)(end - start) / CLOCKS_PER_SEC;
   cout << "Total time:" << end << "  " << start << "  " << endtime << "s"
        << endl;  // s为单位
-  showCloud(result_cloud, origin_cloud_);
+  if (cluster_center->points.size() > 1) {
+    pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
+    kdtree.setInputCloud(cluster_center);
+
+    for (int i = 0; i < cluster_center->points.size(); i++) {
+      cluster temp;
+      temp.index = i;
+      cluster_score.push_back(temp);
+      vector<int> indices;
+      vector<float> dists;
+      kdtree.nearestKSearch(cluster_center->points[i],
+                            int(cluster_center->points.size() / 2), indices,
+                            dists);
+      double sum = 0;
+      for (auto dist : dists) {
+        sum = sum + dist;
+      }
+      cluster_score[i].dense = sum;
+    }
+    sort(cluster_score.begin(), cluster_score.end(), cmp);
+  } else {
+    cluster temp;
+    temp.index = 0;
+    cluster_score.push_back(temp);
+  }
+  for (int i = 0; i < cluster_score.size(); i++) {
+    cluster_score[i].dense_index = i + 1;
+    cout << cluster_score[i].dense_index << "  " << cluster_score[i].dense
+         << " " << cluster_score[i].index << endl;
+  }
+  boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(
+      new pcl::visualization::PCLVisualizer("3D Viewer"));
+  int v1(0);
+  viewer->createViewPort(0.0, 0.0, 0.5, 1.0, v1);
+  viewer->setBackgroundColor(0, 0, 0, v1);
+  viewer->addPointCloud<pcl::PointXYZRGB>(result_cloud, "sample cloud1", v1);
+
+  int v2(0);
+  viewer->createViewPort(0.5, 0.0, 1.0, 1.0, v2);
+  viewer->addPointCloud<pcl::PointXYZ>(origin_cloud_, "sample cloud2", v2);
+  viewer->setBackgroundColor(0.3, 0.3, 0.3, v2);
+  // viewer->addCoordinateSystem(1.0);
+
+  viewer->initCameraParameters();
+  for (int i = 0; i < cluster_centroid.size(); i++)
+    viewerOneOff(*viewer, cluster_centroid[i][0], cluster_centroid[i][1],
+                 cluster_centroid[i][2], "point" + i);
+  while (!viewer->wasStopped()) {
+    viewer->spinOnce(100);
+    // boost::this_thread::sleep(boost::posix_time::microseconds(100000));
+  };
 }
 // int main() {
 //   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new

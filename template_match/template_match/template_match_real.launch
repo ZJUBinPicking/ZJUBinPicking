@@ -37,9 +37,9 @@
 	<param name="model_file_2"  type="string" value="/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/cylinder.pcd"/>
 	
 	</node>
-	<node pkg="template_match" type="output_clouds" name="output_clouds" output="screen">
+	<!-- <node pkg="template_match" type="output_clouds" name="output_clouds" output="screen">
 	<param name="file_location"  type="string" value="/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/filter_1.pcd"/>
-	</node>
+	</node> -->
 	<!-- <node pkg="template_match" type="output_clouds" name="output_clouds" output="screen">
 	<param name="file_location"  type="string" value="/media/gjx/GJX/DL_dataset/pointclouds/0064_cloud.pcd"/>
 	</node> -->
