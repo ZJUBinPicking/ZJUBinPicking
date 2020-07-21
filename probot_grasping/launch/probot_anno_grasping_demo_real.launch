@@ -11,7 +11,7 @@
         <param name="pregrasp_z"            value="0.33"/>
          <param name="grasp_x"            value="0.1"/>
          <param name="grasp_y"            value="0.21"/>
-         <param name="hor_grasp_z"            value="0.08"/>
+         <param name="hor_grasp_z"            value="0.1"/>
          <param name="ver_grasp_z"            value="0.1"/>
          <param name="hor_ratio"            value="0.4"/>
          <param name="ver_ratio"            value="0.4"/>
@@ -22,7 +22,7 @@
         <param name="side_max"            value="0.20"/>
         <param name="MODE"            value="0"/>
         <param name="dl_height"            value="0.35"/>
-        <param name="dx"            value="0.34"/>
+        <param name="dx"            value="0.31"/>
         <param name="dy"            value="0.05"/>
         <param name="dz"            value="0.69"/>
     

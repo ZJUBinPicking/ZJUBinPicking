@@ -2,13 +2,13 @@
 	<node pkg="template_match" type="template_match" name="template_match" output="screen">
 	
 	<!-- red-0.23 0.12-->
-	<param name="min_x"  type="double" value="-0.25"/>
+	<param name="min_x"  type="double" value="-0.27"/>
 	<!-- green-0.18 0.07 -->
-	<param name="min_y"  type="double" value="-0.13"/>
+	<param name="min_y"  type="double" value="-0.135"/>
 	<!-- blue -->
 	<param name="min_z"  type="double" value="0.5"/>
-	<param name="max_x"  type="double" value="0.12"/>
-	<param name="max_y"  type="double" value="0.135"/>
+	<param name="max_x"  type="double" value="0.055"/>
+	<param name="max_y"  type="double" value="0.11"/>
 	<param name="max_z"  type="double" value="0.75"/>
 
 	
@@ -26,14 +26,15 @@
 	<param name="side_min"  type="double" value="-0.1"/>
 	<param name="side_max"  type="double" value="0.15"/>
 	<param name="voxel_grid_size"  type="double" value="0.003"/>
-	<param name="adaptive_threshold"  type="double" value="0.001"/>
+	<param name="adaptive_threshold"  type="double" value="0.05"/>
 	<param name="max_num"  type="int" value="20000"/>
 	<param name="min_num"  type="int" value="150"/>
 	<param name="view_on"  type="bool" value="0"/>
-	<param name="save_filter"  type="bool" value="1"/>
-	<param name="vision_simulation"  type="bool" value="0"/>
-	<param name="simulation"  type="bool" value="0"/>
-	<param name="model_file_"  type="string" value="/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/real_threepipe1091.pcd"/>
+	<param name="if_optimal"  type="bool" value="0"/>
+	<param name="save_filter"  type="int" value="1"/>
+	<param name="vision_simulation"  type="int" value="0"/>
+	<param name="simulation"  type="int" value="0"/>
+	<param name="model_file_"  type="string" value="/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/threeway_trans2.pcd"/>
 	<param name="model_file_1"  type="string" value="/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/project837.pcd"/>
 	<param name="model_file_2"  type="string" value="/home/gjx/orbslam/catkin_ws/src/ZJUBinPicking/pcd_files/cylinder.pcd"/>
 	

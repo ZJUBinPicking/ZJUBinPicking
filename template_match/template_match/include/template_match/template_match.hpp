@@ -262,9 +262,9 @@ class template_match {
   int object_num = 0;
   int com_flag = 0;
   int pick_index;
-  bool if_match = 0;
+  bool if_match = 0, if_optimal;
   bool view_on, detect_flag, first_flag = 0;
-  bool simulation, vision_simulation, save_filter;
+  int simulation, vision_simulation, save_filter;
   clock_t start, end;
   string model_file_, model_file_2, model_file_1;
   Eigen::Vector3f euler_angles;
@@ -313,13 +313,17 @@ class template_match {
   Eigen::Matrix4f icp(pcl::PointCloud<PointT>::Ptr cloud_in,
                       pcl::PointCloud<PointT>::Ptr cloud_out);
   void box(pcl::PointCloud<PointT>::Ptr cloud);
-  void ndt_match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal,
+  Eigen::Matrix4f ndt_match(pcl::PointCloud<pcl::PointXYZ>::Ptr goal,
                  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_2,
-                 pcl::PointCloud<pcl::PointXYZ>::Ptr model, int index);
+                 pcl::PointCloud<pcl::PointXYZ>::Ptr model, Eigen::Matrix4f init_guess);
   void area_division(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
   pcl::PointCloud<pcl::PointXYZ>::Ptr planar_segmentation(
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
   void viewerOneOff(pcl::visualization::PCLVisualizer &viewer, double x,
                     double y, double z, string name);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr pca(
+      pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
+      pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_2,
+      pcl::PointCloud<pcl::PointXYZ>::Ptr model, int index);
 };
 #endif
